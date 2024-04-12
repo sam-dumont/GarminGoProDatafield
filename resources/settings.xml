@@ -1,0 +1,10 @@
+<resources>
+    <properties>
+        <property id="gopro_id" type="number">6253</property>
+    </properties>
+    <settings>
+        <setting propertyKey="@Properties.gopro_id" title="@Strings.gopro_id">
+            <settingConfig type="numeric"/>
+        </setting>
+    </settings>
+</resources>

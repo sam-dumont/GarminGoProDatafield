@@ -1,0 +1,8 @@
+<drawables>
+    <bitmap id="LauncherIcon" filename="launcher_icon.png" />
+    <bitmap id="photo" filename="camera.png" scaleY="20%" />
+    <bitmap id="video" filename="video.png" scaleY="20%" />
+    <bitmap id="timelapse" filename="timelapse.png" scaleY="20%" />
+    <bitmap id="record" filename="record.png" scaleY="20%" />
+    <bitmap id="stop" filename="stop.png" scaleY="20%" />
+</drawables>
