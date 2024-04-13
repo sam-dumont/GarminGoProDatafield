@@ -1,0 +1,14 @@
+<layout id="MainLayout">
+    <text-area id="bodyText" 
+        color="Graphics.COLOR_WHITE" justification="Graphics.TEXT_JUSTIFY_CENTER"
+        text="LOG" 
+        x="10%" y="20%" width="80%" height="60%">
+        <!-- The fonts will be tried in order. This allows scaling the font size
+             as the text grows -->        
+        <fonts>
+            <font>Gfx.FONT_MEDIUM</font>
+            <font>Gfx.FONT_SMALL</font>            
+            <font>Gfx.FONT_TINY</font>
+        </fonts>
+    </text-area>   
+</layout>

@@ -1,0 +1,6 @@
+bin/*.prg
+bin/*.debug.xml
+.DS_Store
+.vscode
+bin/
+python/

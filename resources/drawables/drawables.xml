@@ -1,0 +1,16 @@
+<drawables>
+    <bitmap id="LauncherIcon" filename="launcher_icon.png" />
+    <bitmap id="black_photo" filename="black/camera.png" scaleY="20%" />
+    <bitmap id="black_video" filename="black/video.png" scaleY="20%" />
+    <bitmap id="black_timelapse" filename="black/timelapse.png" scaleY="20%" />
+    <bitmap id="black_record" filename="black/record.png" scaleY="20%" />
+    <bitmap id="black_stop" filename="black/stop.png" scaleY="20%" />
+    <bitmap id="white_photo" filename="white/camera.png" scaleY="20%" />
+    <bitmap id="white_video" filename="white/video.png" scaleY="20%" />
+    <bitmap id="white_timelapse" filename="white/timelapse.png" scaleY="20%" />
+    <bitmap id="white_record" filename="white/record.png" scaleY="20%" />
+    <bitmap id="white_stop" filename="white/stop.png" scaleY="20%" />
+    <bitmap id="grey_photo" filename="grey/camera.png" scaleY="20%" />
+    <bitmap id="grey_video" filename="grey/video.png" scaleY="20%" />
+    <bitmap id="grey_timelapse" filename="grey/timelapse.png" scaleY="20%" />
+</drawables>
