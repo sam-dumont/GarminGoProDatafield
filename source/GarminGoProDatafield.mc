@@ -3,7 +3,7 @@ import Toybox.Lang;
 import Toybox.WatchUi;
 using Toybox.BluetoothLowEnergy as Ble;
 
-class GarminGoProWidgetApp extends Application.AppBase {
+class GarminGoProDatafieldApp extends Application.AppBase {
   hidden var gopro;
   hidden var screenCoordinates;
 

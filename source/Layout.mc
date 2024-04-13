@@ -157,18 +157,19 @@ class Layout {
         :visible => true,
       });
 
-      modeText.initialize({
+      modeText = new WatchUi.TextArea({
         :text => "Cinematic",
         :color => Graphics.COLOR_WHITE,
-        :font => [fonts[3], fonts[2], fonts[1], fonts[0]],
+        :font => [fonts[1], fonts[0]],
         :locX => 0,
-        :locY => height * 0.5,
+        :locY => height * 0.45,
         :justification => Graphics.TEXT_JUSTIFY_CENTER |
         Graphics.TEXT_JUSTIFY_VCENTER,
         :width => width,
-        :height => height * 0.1,
+        :height => height * 0.15,
         :visible => true,
       });
+
       settingsText.initialize({
         :text => "4K | 30 | L+",
         :color => Graphics.COLOR_WHITE,

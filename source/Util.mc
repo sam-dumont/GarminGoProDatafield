@@ -5,7 +5,7 @@ class Util {
     var ss = seconds % 60;
 
     if (hh != 0) {
-      return hh + ":" + mm.format("%02d") + ":" + ss.format("%02d");
+      return hh + "H:" + mm.format("%02d");
     } else {
       return mm + ":" + ss.format("%02d");
     }

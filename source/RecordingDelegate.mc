@@ -27,18 +27,25 @@ class RecordingDelegate extends WatchUi.BehaviorDelegate {
   function onTap(clickEvent) {
     var coordinates = clickEvent.getCoordinates();
 
-    if (withinBoundaries(coordinates, screenCoordinates.modeButton)) {
+    if (
+      withinBoundaries(coordinates, screenCoordinates.modeButton) &&
+      !gopro.recording
+    ) {
       System.println("MODE BUTTON");
       if (gopro.mode == GoPro.MODE_VIDEO) {
-        gopro.mode = GoPro.MODE_PHOTO;
+        gopro.sendCommand("PRESET_PHOTO");
       } else if (gopro.mode == GoPro.MODE_PHOTO) {
-        gopro.mode = GoPro.MODE_TIMELAPSE;
+        gopro.sendCommand("PRESET_TIMELAPSE");
       } else {
-        gopro.mode = GoPro.MODE_VIDEO;
+        gopro.sendCommand("PRESET_VIDEO");
       }
     } else if (withinBoundaries(coordinates, screenCoordinates.recordButton)) {
       System.println("RECORD BUTTON");
-      gopro.recording = !gopro.recording;
+      if (gopro.recording) {
+        gopro.sendCommand("SHUTTER_OFF");
+      } else {
+        gopro.sendCommand("SHUTTER_ON");
+      }
     } else {
       "NO BUTTON";
     }
