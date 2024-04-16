@@ -91,7 +91,25 @@ class Layout {
     var width = dc.getWidth();
     var height = dc.getHeight();
     layoutType = newLayoutType;
-    if (layoutType == 0) {
+    if (layoutType == -1) {
+      durationText.initialize({
+        :text => "CONNECT",
+        :color => Graphics.COLOR_WHITE,
+        :backgroundColor => Graphics.COLOR_BLACK,
+        :font => [fonts[5], fonts[4], fonts[3], fonts[2], fonts[1], fonts[0]],
+        :locX => width * 0.2,
+        :locY => height * 0.3,
+        :justification => Graphics.TEXT_JUSTIFY_CENTER |
+        Graphics.TEXT_JUSTIFY_VCENTER,
+        :width => width * 0.6,
+        :height => height * 0.4,
+        :visible => true,
+      });
+      remainingText.setVisible(false);
+      batteryText.setVisible(false);
+      modeText.setVisible(false);
+      settingsText.setVisible(false);
+    } else if (layoutType == 0) {
       durationText.initialize({
         :text => "00:09",
         :color => Graphics.COLOR_WHITE,
@@ -160,7 +178,7 @@ class Layout {
       modeText = new WatchUi.TextArea({
         :text => "Cinematic",
         :color => Graphics.COLOR_WHITE,
-        :font => [fonts[1], fonts[0]],
+        :font => [fonts[3], fonts[2], fonts[1], fonts[0]],
         :locX => 0,
         :locY => height * 0.45,
         :justification => Graphics.TEXT_JUSTIFY_CENTER |
