@@ -3,6 +3,8 @@ import Toybox.Lang;
 import Toybox.WatchUi;
 using Toybox.BluetoothLowEnergy as Ble;
 
+var mainView;
+
 class GarminGoProDatafieldApp extends Application.AppBase {
   hidden var gopro;
   hidden var screenCoordinates;
@@ -23,14 +25,28 @@ class GarminGoProDatafieldApp extends Application.AppBase {
   function onStop(state as Dictionary?) as Void {
     if (gopro.device != null) {
       gopro.close();
-      Ble.unpairDevice(gopro.device);
     }
   }
 
   // Return the initial view of your application here
   function getInitialView() as Array<Views or InputDelegates>? {
+    
+    $.mainView = new MainView(gopro, screenCoordinates);
+
     return (
-      [new MainView(gopro,screenCoordinates),new RecordingDelegate(gopro,screenCoordinates)] as Array<Views or InputDelegates>
+      [
+        $.mainView,
+        new RecordingDelegate(gopro, screenCoordinates),
+      ] as Array<Views or InputDelegates>
     );
+  }
+
+  function onSettingsChanged() {
+  $.mainView.handleSettingsChanged();
+  WatchUi.requestUpdate();
+}
+
+  function getSettingsView() {
+    return [new SettingsMenu(), new SettingsMenuDelegate()];
   }
 }

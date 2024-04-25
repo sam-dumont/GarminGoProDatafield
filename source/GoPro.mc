@@ -4,6 +4,7 @@ using Toybox.System;
 using Toybox.BluetoothLowEnergy as Ble;
 using Toybox.Application;
 using Toybox.Lang;
+using Toybox.StringUtil;
 
 class GoPro extends Ble.BleDelegate {
   const DEVICE_NAME = "GoPro Cam";
@@ -39,6 +40,9 @@ class GoPro extends Ble.BleDelegate {
   const RESPONSE_TYPE_SETTING = 0x52;
   const NOTIFICATION_TYPE_STATUS = 0x93;
   const NOTIFICATION_TYPE_SETTING = 0x92;
+  const FEATURE_TYPE_PRESET = 0xf5;
+  const RESPONSE_TYPE_PRESET = 0xf2;
+  const NOTIFICATION_TYPE_PRESET = 0xf3;
 
   enum {
     COMMAND_START_REC = 0,
@@ -66,7 +70,15 @@ class GoPro extends Ble.BleDelegate {
   const STATUS_REM_VIDEOS = 0x23;
   const STATUS_REM_TIMELAPSE = 0x40;
   const STATUS_BATTERY_PERCENT = 0x46;
-  const STATUS_PRESET = 0x60;
+  const STATUS_VIDEO_PRESET = 0x5d;
+  const STATUS_PHOTO_PRESET = 0x5e;
+  const STATUS_TIMELAPSE_PRESET = 0x5f;
+  const STATUS_PRESET_GROUP = 0x60;
+  const STATUS_PRESET = 0x61;
+  const STATUS_LENS_121 = 0x79;
+  const STATUS_LENS_122 = 0x7a;
+  const STATUS_LENS_123 = 0x7b;
+  const STATUS_FORMAT = 0x80;
 
   const RES_IDS = {
     1 => "4K",
@@ -88,10 +100,10 @@ class GoPro extends Ble.BleDelegate {
     111 => "2.7K",
   };
   const FOV_IDS = {
-    0 => "W",
-    2 => "N",
-    3 => "SV",
-    4 => "L",
+    0 => "Wide",
+    2 => "Narrow",
+    3 => "SuperView",
+    4 => "Linear",
   };
   const FPS_IDS = {
     0 => "240",
@@ -104,17 +116,115 @@ class GoPro extends Ble.BleDelegate {
     10 => "24",
     13 => "200",
   };
+  const LENS_121_IDS = {
+    0 => "Wide",
+    2 => "Narrow",
+    3 => "SuperView",
+    4 => "Linear",
+    7 => "Max SV",
+    8 => "Linear+HLev",
+    9 => "HyperView",
+    10 => "Linear+HLock",
+    11 => "Max HV",
+  };
+  const LENS_122_123_IDS = {
+    19 => "Narrow",
+    100 => "Max SV",
+    101 => "Wide",
+    102 => "Linear",
+  };
+
+  const FORMAT_IDS = {
+    13 => "Video",
+    20 => "Photo",
+    21 => "Photo",
+    26 => "Video",
+  };
+
+  const PRESET_TITLES_IDS = {
+    0 => "Activity",
+    1 => "Standard",
+    2 => "Cinematic",
+    3 => "Photo",
+    4 => "Live Burst",
+    5 => "Burst",
+    6 => "Night",
+    7 => "Time Warp",
+    8 => "Time Lapse",
+    9 => "Night Lapse",
+    10 => "Video",
+    11 => "SloMo",
+    13 => "Photo",
+    14 => "Panorama",
+    16 => "Time Warp",
+    18 => "Custom",
+    19 => "Air",
+    20 => "Bike",
+    21 => "Epic",
+    22 => "Indoor",
+    23 => "Motor",
+    24 => "Mounted",
+    25 => "Outdoor",
+    26 => "POV",
+    27 => "Selfie",
+    28 => "Skate",
+    29 => "Snow",
+    30 => "Trail",
+    31 => "Travel",
+    32 => "Water",
+    33 => "Looping",
+    34 => "Stars",
+    35 => "Action",
+    36 => "Follow cam",
+    37 => "Surf",
+    38 => "City",
+    39 => "Shaky",
+    40 => "Chesty",
+    41 => "Helmet",
+    42 => "Bite",
+    58 => "Basic",
+    59 => "Ultra SloMo",
+    60 => "Standard Endurance",
+    62 => "Cinematic Endurance",
+    63 => "SloMo Endurance",
+    64 => "Stationary",
+    65 => "Stationary",
+    66 => "Stationary",
+    67 => "Stationary",
+    68 => "Simple Video",
+    69 => "Simple Time Warp",
+    70 => "Simple Super Photo",
+    71 => "Simple Night Photo",
+    72 => "Simple Video Endurance",
+    73 => "Highest Quality",
+    74 => "Extended Battery",
+    75 => "Longest Battery",
+    76 => "Star Trail",
+    77 => "Light Painting",
+    78 => "Light Trail",
+    79 => "Full Frame",
+    82 => "Standard Quality Video",
+    83 => "Basic Quality Video",
+    93 => "Highest Quality Video",
+    94 => "Used Defined",
+  };
+
   var commands = {
     "SHUTTER_ON" => [0x03, 0x01, 0x01, 0x01]b, // set shutter on
     "SHUTTER_OFF" => [0x03, 0x01, 0x01, 0x00]b, // set shutter off
+    "HILIGHT" => [0x01, 0x18]b, // hilight video
     "KEEPALIVE" => [0x03, 0x5b, 0x01, 0x42]b, // set keepalive
-    "SETTINGS_UPDATES" => [0x04, 0x52, 0x02, 0x03, 0x2b]b, // settings value updates
+    "SETTINGS_UPDATES" => [
+      0x08, 0x52, 0x02, 0x03, 0x2b, 0x79, 0x7a, 0x7b, 0x80,
+    ]b, // settings value updates
     "VALUES_UPDATES" => [
-      0x09, 0x53, 0xa, 0xd, 0x22, 0x23, 0x40, 0x46, 0x60, 0x61,
+      0x0c, 0x53, 0xa, 0xd, 0x22, 0x23, 0x40, 0x46, 0x5d, 0x5e, 0x5f, 0x60,
+      0x61,
     ]b, // status value updates
     "PRESET_PHOTO" => [0x04, 0x3e, 0x02, 0x03, 0xe9]b,
     "PRESET_VIDEO" => [0x04, 0x3e, 0x02, 0x03, 0xe8]b,
     "PRESET_TIMELAPSE" => [0x04, 0x3e, 0x02, 0x03, 0xea]b,
+    "PRESET_LIST" => [0x04, 0xf5, 0x72, 0x08, 0x01]b,
   };
 
   var scanning = false;
@@ -126,6 +236,7 @@ class GoPro extends Ble.BleDelegate {
   var remainingPhotos = 3600;
   var remainingTimelapse = 3600;
   var mode = GoPro.MODE_VIDEO;
+  var modeId = null;
   var modeName = "Standard";
   var recordingDuration = 0;
   var recording = false;
@@ -141,6 +252,16 @@ class GoPro extends Ble.BleDelegate {
   var resolution = 1;
   var fps = 5;
   var fov = 0;
+  var lens_121 = 0;
+  var lens_122 = 0;
+  var lens_123 = 0;
+  var format = 0;
+  var remainingTimeDelta = 0;
+  var shouldConnect = false;
+  var presetListFetched = false;
+  var presetGroups = null;
+  var currentPreset = null;
+  var ProfileRegistered = false;
 
   function debug(str) {
     System.println("[ble] " + str);
@@ -154,11 +275,43 @@ class GoPro extends Ble.BleDelegate {
   }
 
   function formatSettings() {
-    settings = Lang.format("$1$ | $2$ | $3$", [
-      RES_IDS.get(resolution),
-      FPS_IDS.get(fps),
-      FOV_IDS.get(fov),
-    ]);
+    if (
+      presetGroups != null &&
+      presetGroups.presets.get(mode.toNumber()) != null &&
+      modeId != null
+    ) {
+      currentPreset = presetGroups.presets
+        .get(mode.toNumber())
+        .get(modeId.toNumber());
+    }
+
+    if (currentPreset != null) {
+      modeName = PRESET_TITLES_IDS.get(currentPreset.get("title"));
+      if (currentPreset.get("titleNumber") > 0) {
+        modeName = modeName + " " + currentPreset.get("titleNumber");
+      }
+    }
+
+    var lFov = null;
+    if (LENS_121_IDS.get(lens_121)) {
+      lFov = LENS_121_IDS.get(lens_121);
+    } else if (LENS_122_123_IDS.get(lens_122)) {
+      lFov = LENS_122_123_IDS.get(lens_122);
+    } else if (LENS_122_123_IDS.get(lens_123)) {
+      lFov = LENS_122_123_IDS.get(lens_123);
+    } else {
+      lFov = FOV_IDS.get(fov);
+    }
+
+    if (mode == GoPro.MODE_PHOTO) {
+      settings = Lang.format("$1$", [lFov]);
+    } else {
+      settings = Lang.format("$1$ | $2$ | $3$", [
+        RES_IDS.get(resolution),
+        FPS_IDS.get(fps),
+        lFov,
+      ]);
+    }
   }
 
   function accumulateQueryResponses() {
@@ -194,78 +347,132 @@ class GoPro extends Ble.BleDelegate {
   }
 
   function parseQueryResponse() {
-    var currentByte = 2;
+    if (queryResponse.size() == 0 && presetGroups == null) {
+      queryResponse = [245, 242]b;
+      queryResponse = queryResponse.addAll(
+        StringUtil.convertEncodedString(
+          "CrcCCOgHEiQICRAMGBUoATAVOgYIAhABGAE6BggDEAgYAToGCHkQAxgBQAASJggIEAwYFCABKAEwFDoGCAIQARgBOgYIAxAIGAE6Bgh5EAAYAUAAEiQIBxAMGBIoATASOgYIAhABGAE6BggDEAgYAToGCHkQAxgBQAASJAgGEAwYFCgBMBQ6BggCEAEYAToGCAMQCBgBOgYIeRAEGAFAABIkCAAQDBgBKAAwADoGCAIQCRgBOgYIAxAFGAE6Bgh5EAAYAUAAEiQIARAMGAAoADABOgYIAhABGAE6BggDEAgYAToGCHkQAhgBQAESJAgCEAwYAigAMAI6BggCEAEYAToGCAMQCBgBOgYIeRACGAFAARIkCAMQGxgLKAAwCjoGCAIQCRgBOgYIAxAAGAE6Bgh5EAAYAUAAGAEKfwjpBxIWCICABBARGAMoADADOgYIehBlGAFAARIfCIGABBAZGAQoADAEOgcIhQEQABgBOgYIeRAAGAFAABIfCIKABBATGAUoADAFOgcIkwEQBBgBOgYIexBlGAFAARIeCIOABBASGAYoADAGOgYIExAAGAE6Bgh6EGUYAUAAGAEKfgjqBxImCICACBAYGAcoADAHOgYIAhABGAE6BghvEAoYAToGCHkQCBgBQAESJgiBgAgQDRgIKAAwCDoGCAIQCRgBOgYIBRAAGAE6Bgh5EAAYAUAAEicIgoAIEBoYCSgAMAk6BggCEAkYAToHCCAQkRwYAToGCHkQABgBQAAYAQ==",
+          {
+            :fromRepresentation => StringUtil.REPRESENTATION_STRING_BASE64,
+            :toRepresentation => StringUtil.REPRESENTATION_BYTE_ARRAY,
+          }
+        )
+      );
+    }
     if (queryResponse.size() > 0) {
-      var currentId = -1;
-      var data = new [0]b;
-      var size = 0;
-      while (currentByte < queryResponse.size()) {
-        currentId = queryResponse[currentByte];
-        size = queryResponse[currentByte + 1].toNumber();
-        data = queryResponse.slice(currentByte + 2, currentByte + 2 + size);
-        debug(Lang.format("$1$ $2$ $3$", [currentId, size, data]));
-        currentByte = currentByte + 2 + size;
-        if (
-          queryResponse[0] == RESPONSE_TYPE_STATUS ||
-          queryResponse[0] == NOTIFICATION_TYPE_STATUS
-        ) {
-          if (currentId == STATUS_DURATION) {
-            recordingDuration = data.decodeNumber(Lang.NUMBER_FORMAT_UINT32, {
-              :offset => 0,
-              :endianness => Lang.ENDIAN_BIG,
-            });
-          } else if (currentId == STATUS_REM_PHOTOS) {
-            remainingPhotos = data.decodeNumber(Lang.NUMBER_FORMAT_UINT32, {
-              :offset => 0,
-              :endianness => Lang.ENDIAN_BIG,
-            });
-          } else if (currentId == STATUS_REM_VIDEOS) {
-            remainingTime = data.decodeNumber(Lang.NUMBER_FORMAT_UINT32, {
-              :offset => 0,
-              :endianness => Lang.ENDIAN_BIG,
-            });
-          } else if (currentId == STATUS_REM_TIMELAPSE) {
-            remainingTimelapse = data.decodeNumber(Lang.NUMBER_FORMAT_UINT32, {
-              :offset => 0,
-              :endianness => Lang.ENDIAN_BIG,
-            });
-          } else if (currentId == STATUS_BATTERY_PERCENT) {
-            batteryLife = data.decodeNumber(Lang.NUMBER_FORMAT_UINT8, {
-              :offset => 0,
-              :endianness => Lang.ENDIAN_BIG,
-            });
-          } else if (currentId == STATUS_PRESET) {
-            mode = data.decodeNumber(Lang.NUMBER_FORMAT_UINT32, {
-              :offset => 0,
-              :endianness => Lang.ENDIAN_BIG,
-            });
-          } else if (currentId == STATUS_RECORDING) {
-            recording =
-              data.decodeNumber(Lang.NUMBER_FORMAT_UINT8, {
+      if (
+        queryResponse[0] == FEATURE_TYPE_PRESET &&
+        (queryResponse[1] == RESPONSE_TYPE_PRESET ||
+          queryResponse[1] == NOTIFICATION_TYPE_PRESET)
+      ) {
+        presetGroups = new PresetGroups(queryResponse.slice(2, null));
+        queryResponse = new [0]b;
+      } else {
+        var currentByte = 2;
+        var currentId = -1;
+        var data = new [0]b;
+        var size = 0;
+        while (currentByte < queryResponse.size()) {
+          currentId = queryResponse[currentByte];
+          size = queryResponse[currentByte + 1].toNumber();
+          data = queryResponse.slice(currentByte + 2, currentByte + 2 + size);
+          debug(Lang.format("$1$ $2$ $3$", [currentId, size, data]));
+          currentByte = currentByte + 2 + size;
+          if (
+            queryResponse[0] == RESPONSE_TYPE_STATUS ||
+            queryResponse[0] == NOTIFICATION_TYPE_STATUS
+          ) {
+            if (currentId == STATUS_DURATION) {
+              recordingDuration = data.decodeNumber(Lang.NUMBER_FORMAT_UINT32, {
                 :offset => 0,
                 :endianness => Lang.ENDIAN_BIG,
-              }) == 1;
-          }
-        } else if (
-          queryResponse[0] == RESPONSE_TYPE_SETTING ||
-          queryResponse[0] == NOTIFICATION_TYPE_SETTING
-        ) {
-          if (currentId == STATUS_RES) {
-            resolution = data.decodeNumber(Lang.NUMBER_FORMAT_UINT8, {
-              :offset => 0,
-              :endianness => Lang.ENDIAN_BIG,
-            });
-          } else if (currentId == STATUS_FOV) {
-            fov = data.decodeNumber(Lang.NUMBER_FORMAT_UINT8, {
-              :offset => 0,
-              :endianness => Lang.ENDIAN_BIG,
-            });
-          }
-          if (currentId == STATUS_FPS) {
-            fps = data.decodeNumber(Lang.NUMBER_FORMAT_UINT8, {
-              :offset => 0,
-              :endianness => Lang.ENDIAN_BIG,
-            });
+              });
+            } else if (currentId == STATUS_REM_PHOTOS) {
+              remainingPhotos = data.decodeNumber(Lang.NUMBER_FORMAT_UINT32, {
+                :offset => 0,
+                :endianness => Lang.ENDIAN_BIG,
+              });
+            } else if (currentId == STATUS_REM_VIDEOS) {
+              remainingTime = data.decodeNumber(Lang.NUMBER_FORMAT_UINT32, {
+                :offset => 0,
+                :endianness => Lang.ENDIAN_BIG,
+              });
+            } else if (currentId == STATUS_REM_TIMELAPSE) {
+              remainingTimelapse = data.decodeNumber(
+                Lang.NUMBER_FORMAT_UINT32,
+                {
+                  :offset => 0,
+                  :endianness => Lang.ENDIAN_BIG,
+                }
+              );
+              remainingTimeDelta = 0;
+            } else if (currentId == STATUS_BATTERY_PERCENT) {
+              batteryLife = data.decodeNumber(Lang.NUMBER_FORMAT_UINT8, {
+                :offset => 0,
+                :endianness => Lang.ENDIAN_BIG,
+              });
+            } else if (currentId == STATUS_PRESET_GROUP) {
+              mode = data.decodeNumber(Lang.NUMBER_FORMAT_UINT32, {
+                :offset => 0,
+                :endianness => Lang.ENDIAN_BIG,
+              });
+            } else if (currentId == STATUS_PRESET) {
+              modeId = data.decodeNumber(Lang.NUMBER_FORMAT_UINT32, {
+                :offset => 0,
+                :endianness => Lang.ENDIAN_BIG,
+              });
+            } else if (currentId == STATUS_RECORDING) {
+              recording =
+                data.decodeNumber(Lang.NUMBER_FORMAT_UINT8, {
+                  :offset => 0,
+                  :endianness => Lang.ENDIAN_BIG,
+                }) == 1;
+            }
+          } else if (
+            queryResponse[0] == RESPONSE_TYPE_SETTING ||
+            queryResponse[0] == NOTIFICATION_TYPE_SETTING
+          ) {
+            if (currentId == STATUS_RES) {
+              resolution = data.decodeNumber(Lang.NUMBER_FORMAT_UINT8, {
+                :offset => 0,
+                :endianness => Lang.ENDIAN_BIG,
+              });
+            } else if (currentId == STATUS_FOV) {
+              fov = data.decodeNumber(Lang.NUMBER_FORMAT_UINT8, {
+                :offset => 0,
+                :endianness => Lang.ENDIAN_BIG,
+              });
+            }
+            if (currentId == STATUS_FPS) {
+              fps = data.decodeNumber(Lang.NUMBER_FORMAT_UINT8, {
+                :offset => 0,
+                :endianness => Lang.ENDIAN_BIG,
+              });
+            }
+            if (currentId == STATUS_FORMAT) {
+              format = data.decodeNumber(Lang.NUMBER_FORMAT_UINT8, {
+                :offset => 0,
+                :endianness => Lang.ENDIAN_BIG,
+              });
+            }
+            if (currentId == STATUS_LENS_121) {
+              lens_121 = data.decodeNumber(Lang.NUMBER_FORMAT_UINT8, {
+                :offset => 0,
+                :endianness => Lang.ENDIAN_BIG,
+              });
+            }
+            if (currentId == STATUS_LENS_122) {
+              lens_122 = data.decodeNumber(Lang.NUMBER_FORMAT_UINT8, {
+                :offset => 0,
+                :endianness => Lang.ENDIAN_BIG,
+              });
+            }
+            if (currentId == STATUS_LENS_123) {
+              lens_123 = data.decodeNumber(Lang.NUMBER_FORMAT_UINT8, {
+                :offset => 0,
+                :endianness => Lang.ENDIAN_BIG,
+              });
+            }
           }
         }
       }
@@ -323,6 +530,9 @@ class GoPro extends Ble.BleDelegate {
     if (!settingsSubscribed) {
       sendQuery("SETTINGS_UPDATES");
       settingsSubscribed = true;
+    } else if (!presetListFetched) {
+      sendQuery("PRESET_LIST");
+      presetListFetched = true;
     }
   }
 
@@ -372,38 +582,41 @@ class GoPro extends Ble.BleDelegate {
   }
 
   function onProfileRegister(uuid, status) {
+    profileRegistered = true;
     debug("registered: " + uuid + " " + status);
   }
 
   function registerProfiles() {
-    var profile = {
-      :uuid => CONTROL_AND_QUERY_SERVICE,
-      :characteristics => [
-        {
-          :uuid => COMMAND_NOTIFICATION,
-          :descriptors => [CONTROL_AND_QUERY_DESC],
-        },
-        {
-          :uuid => COMMAND_CHAR,
-        },
-        {
-          :uuid => SETTINGS_NOTIFICATION,
-          :descriptors => [CONTROL_AND_QUERY_DESC],
-        },
-        {
-          :uuid => SETTINGS_CHAR,
-        },
-        {
-          :uuid => QUERY_NOTIFICATION,
-          :descriptors => [CONTROL_AND_QUERY_DESC],
-        },
-        {
-          :uuid => QUERY_CHAR,
-        },
-      ],
-    };
+    if (!profileRegistered) {
+      var profile = {
+        :uuid => CONTROL_AND_QUERY_SERVICE,
+        :characteristics => [
+          {
+            :uuid => COMMAND_NOTIFICATION,
+            :descriptors => [CONTROL_AND_QUERY_DESC],
+          },
+          {
+            :uuid => COMMAND_CHAR,
+          },
+          {
+            :uuid => SETTINGS_NOTIFICATION,
+            :descriptors => [CONTROL_AND_QUERY_DESC],
+          },
+          {
+            :uuid => SETTINGS_CHAR,
+          },
+          {
+            :uuid => QUERY_NOTIFICATION,
+            :descriptors => [CONTROL_AND_QUERY_DESC],
+          },
+          {
+            :uuid => QUERY_CHAR,
+          },
+        ],
+      };
 
-    BluetoothLowEnergy.registerProfile(profile);
+      BluetoothLowEnergy.registerProfile(profile);
+    }
   }
 
   function onScanStateChange(scanState, status) {
@@ -449,7 +662,7 @@ class GoPro extends Ble.BleDelegate {
   }
 
   function onScanResults(scanResults) {
-    debug("scan results");
+    //debug("scan results");
     var name;
     var uuids;
     for (
@@ -461,7 +674,7 @@ class GoPro extends Ble.BleDelegate {
       uuids = result.getServiceUuids();
 
       for (var x = uuids.next(); x != null; x = uuids.next()) {
-        if (x.equals(CONTROL_AND_QUERY_SERVICE)) {
+        if (shouldConnect && x.equals(CONTROL_AND_QUERY_SERVICE)) {
           debug("found matching device. uuid: " + x);
           if (
             Application.Storage.getValue("paired") != null &&

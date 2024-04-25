@@ -10,4 +10,12 @@ class Util {
       return mm + ":" + ss.format("%02d");
     }
   }
+  
+  static function replaceNull(nullableValue, defaultValue) {
+    if (nullableValue != null) {
+      return nullableValue;
+    } else {
+      return defaultValue;
+    }
+  }
 }

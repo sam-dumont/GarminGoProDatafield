@@ -28,6 +28,12 @@ class RecordingDelegate extends WatchUi.BehaviorDelegate {
     var coordinates = clickEvent.getCoordinates();
 
     if (
+      withinBoundaries(coordinates, screenCoordinates.connectButton) &&
+      !gopro.shouldConnect
+    ) {
+      System.println("START CONNECT");
+      gopro.shouldConnect = true;
+    } else if (
       withinBoundaries(coordinates, screenCoordinates.modeButton) &&
       !gopro.recording
     ) {
@@ -39,6 +45,13 @@ class RecordingDelegate extends WatchUi.BehaviorDelegate {
       } else {
         gopro.sendCommand("PRESET_VIDEO");
       }
+    } else if (
+      withinBoundaries(coordinates, screenCoordinates.modeButton) &&
+      gopro.recording &&
+      gopro.mode == GoPro.MODE_VIDEO
+    ) {
+      System.println("HILIGHT BUTTON");
+      gopro.sendCommand("HILIGHT");
     } else if (withinBoundaries(coordinates, screenCoordinates.recordButton)) {
       System.println("RECORD BUTTON");
       if (gopro.recording) {

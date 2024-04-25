@@ -7,6 +7,9 @@ class ScreenCoordinates {
     [0, 0],
     [0, 0],
   ];
-
+  var connectButton = [
+    [0, 0],
+    [0, 0],
+  ];
   function initialize() {}
 }
