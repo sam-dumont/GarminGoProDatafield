@@ -1,14 +1,14 @@
 <resources>
     <properties>
-        <property id="gopro_id" type="number">0</property>
-        <property id="enable_debug" type="boolean">false</property>
+        <property id="gopro_id" type="number">6253</property>
+        <property id="enable_debug" type="boolean">true</property>
     </properties>
     <settings>
         <setting propertyKey="@Properties.gopro_id" title="@Strings.gopro_id">
-            <settingConfig type="numeric"/>
+            <settingConfig type="numeric" />
         </setting>
         <setting propertyKey="@Properties.enable_debug" title="@Strings.enable_debug">
-            <settingConfig type="boolean"/>
+            <settingConfig type="boolean" />
         </setting>
     </settings>
 </resources>

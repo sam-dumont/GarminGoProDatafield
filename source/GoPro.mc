@@ -4,6 +4,7 @@ using Toybox.System;
 using Toybox.BluetoothLowEnergy as Ble;
 using Toybox.Application;
 using Toybox.Lang;
+using Toybox.StringUtil;
 
 class GoPro extends Ble.BleDelegate {
   const DEVICE_NAME = "GoPro Cam";
@@ -39,6 +40,9 @@ class GoPro extends Ble.BleDelegate {
   const RESPONSE_TYPE_SETTING = 0x52;
   const NOTIFICATION_TYPE_STATUS = 0x93;
   const NOTIFICATION_TYPE_SETTING = 0x92;
+  const FEATURE_TYPE_PRESET = 0xf5;
+  const RESPONSE_TYPE_PRESET = 0xf2;
+  const NOTIFICATION_TYPE_PRESET = 0xf3;
 
   enum {
     COMMAND_START_REC = 0,
@@ -220,7 +224,7 @@ class GoPro extends Ble.BleDelegate {
     "PRESET_PHOTO" => [0x04, 0x3e, 0x02, 0x03, 0xe9]b,
     "PRESET_VIDEO" => [0x04, 0x3e, 0x02, 0x03, 0xe8]b,
     "PRESET_TIMELAPSE" => [0x04, 0x3e, 0x02, 0x03, 0xea]b,
-    "PRESET_LIST" => [0xf5, 0x72]b,
+    "PRESET_LIST" => [0x04, 0xf5, 0x72, 0x08, 0x01]b,
   };
 
   var scanning = false;
@@ -232,11 +236,8 @@ class GoPro extends Ble.BleDelegate {
   var remainingPhotos = 3600;
   var remainingTimelapse = 3600;
   var mode = GoPro.MODE_VIDEO;
+  var modeId = null;
   var modeName = "Standard";
-  var genericModeName = 0;
-  var videoModeName = 0;
-  var photoModeName = 0;
-  var timelapseModeName = 0;
   var recordingDuration = 0;
   var recording = false;
   var settings = "4K | 30 | L+";
@@ -257,6 +258,9 @@ class GoPro extends Ble.BleDelegate {
   var format = 0;
   var remainingTimeDelta = 0;
   var shouldConnect = false;
+  var presetListFetched = false;
+  var presetGroups = null;
+  var currentPreset = null;
 
   function debug(str) {
     System.println("[ble] " + str);
@@ -270,6 +274,23 @@ class GoPro extends Ble.BleDelegate {
   }
 
   function formatSettings() {
+    if (
+      presetGroups != null &&
+      presetGroups.presets.get(mode.toNumber()) != null &&
+      modeId != null
+    ) {
+      currentPreset = presetGroups.presets
+        .get(mode.toNumber())
+        .get(modeId.toNumber());
+    }
+
+    if (currentPreset != null) {
+      modeName = PRESET_TITLES_IDS.get(currentPreset.get("title"));
+      if (currentPreset.get("titleNumber") > 0) {
+        modeName = modeName + " " + currentPreset.get("titleNumber");
+      }
+    }
+
     var lFov = null;
     if (LENS_121_IDS.get(lens_121)) {
       lFov = LENS_121_IDS.get(lens_121);
@@ -283,34 +304,7 @@ class GoPro extends Ble.BleDelegate {
 
     if (mode == GoPro.MODE_PHOTO) {
       settings = Lang.format("$1$", [lFov]);
-      if (PRESET_TITLES_IDS.get(photoModeName)) {
-        modeName = PRESET_TITLES_IDS.get(photoModeName);
-      } else {
-        modeName = Util.replaceNull(
-          PRESET_TITLES_IDS.get(genericModeName),
-          "Standard"
-        );
-      }
     } else {
-      if (mode == GoPro.MODE_VIDEO) {
-        if (PRESET_TITLES_IDS.get(videoModeName)) {
-          modeName = PRESET_TITLES_IDS.get(photoModeName);
-        } else {
-          modeName = Util.replaceNull(
-            PRESET_TITLES_IDS.get(genericModeName),
-            "Standard"
-          );
-        }
-      } else {
-        if (PRESET_TITLES_IDS.get(timelapseModeName)) {
-          modeName = PRESET_TITLES_IDS.get(photoModeName);
-        } else {
-          modeName = Util.replaceNull(
-            PRESET_TITLES_IDS.get(genericModeName),
-            "Standard"
-          );
-        }
-      }
       settings = Lang.format("$1$ | $2$ | $3$", [
         RES_IDS.get(resolution),
         FPS_IDS.get(fps),
@@ -352,123 +346,132 @@ class GoPro extends Ble.BleDelegate {
   }
 
   function parseQueryResponse() {
-    var currentByte = 2;
+    if (queryResponse.size() == 0 && presetGroups == null) {
+      queryResponse = [245, 242]b;
+      queryResponse = queryResponse.addAll(
+        StringUtil.convertEncodedString(
+          "CrcCCOgHEiQICRAMGBUoATAVOgYIAhABGAE6BggDEAgYAToGCHkQAxgBQAASJggIEAwYFCABKAEwFDoGCAIQARgBOgYIAxAIGAE6Bgh5EAAYAUAAEiQIBxAMGBIoATASOgYIAhABGAE6BggDEAgYAToGCHkQAxgBQAASJAgGEAwYFCgBMBQ6BggCEAEYAToGCAMQCBgBOgYIeRAEGAFAABIkCAAQDBgBKAAwADoGCAIQCRgBOgYIAxAFGAE6Bgh5EAAYAUAAEiQIARAMGAAoADABOgYIAhABGAE6BggDEAgYAToGCHkQAhgBQAESJAgCEAwYAigAMAI6BggCEAEYAToGCAMQCBgBOgYIeRACGAFAARIkCAMQGxgLKAAwCjoGCAIQCRgBOgYIAxAAGAE6Bgh5EAAYAUAAGAEKfwjpBxIWCICABBARGAMoADADOgYIehBlGAFAARIfCIGABBAZGAQoADAEOgcIhQEQABgBOgYIeRAAGAFAABIfCIKABBATGAUoADAFOgcIkwEQBBgBOgYIexBlGAFAARIeCIOABBASGAYoADAGOgYIExAAGAE6Bgh6EGUYAUAAGAEKfgjqBxImCICACBAYGAcoADAHOgYIAhABGAE6BghvEAoYAToGCHkQCBgBQAESJgiBgAgQDRgIKAAwCDoGCAIQCRgBOgYIBRAAGAE6Bgh5EAAYAUAAEicIgoAIEBoYCSgAMAk6BggCEAkYAToHCCAQkRwYAToGCHkQABgBQAAYAQ==",
+          {
+            :fromRepresentation => StringUtil.REPRESENTATION_STRING_BASE64,
+            :toRepresentation => StringUtil.REPRESENTATION_BYTE_ARRAY,
+          }
+        )
+      );
+    }
     if (queryResponse.size() > 0) {
-      var currentId = -1;
-      var data = new [0]b;
-      var size = 0;
-      while (currentByte < queryResponse.size()) {
-        currentId = queryResponse[currentByte];
-        size = queryResponse[currentByte + 1].toNumber();
-        data = queryResponse.slice(currentByte + 2, currentByte + 2 + size);
-        debug(Lang.format("$1$ $2$ $3$", [currentId, size, data]));
-        currentByte = currentByte + 2 + size;
-        if (
-          queryResponse[0] == RESPONSE_TYPE_STATUS ||
-          queryResponse[0] == NOTIFICATION_TYPE_STATUS
-        ) {
-          if (currentId == STATUS_DURATION) {
-            recordingDuration = data.decodeNumber(Lang.NUMBER_FORMAT_UINT32, {
-              :offset => 0,
-              :endianness => Lang.ENDIAN_BIG,
-            });
-          } else if (currentId == STATUS_REM_PHOTOS) {
-            remainingPhotos = data.decodeNumber(Lang.NUMBER_FORMAT_UINT32, {
-              :offset => 0,
-              :endianness => Lang.ENDIAN_BIG,
-            });
-          } else if (currentId == STATUS_REM_VIDEOS) {
-            remainingTime = data.decodeNumber(Lang.NUMBER_FORMAT_UINT32, {
-              :offset => 0,
-              :endianness => Lang.ENDIAN_BIG,
-            });
-          } else if (currentId == STATUS_REM_TIMELAPSE) {
-            remainingTimelapse = data.decodeNumber(Lang.NUMBER_FORMAT_UINT32, {
-              :offset => 0,
-              :endianness => Lang.ENDIAN_BIG,
-            });
-            remainingTimeDelta = 0;
-          } else if (currentId == STATUS_BATTERY_PERCENT) {
-            batteryLife = data.decodeNumber(Lang.NUMBER_FORMAT_UINT8, {
-              :offset => 0,
-              :endianness => Lang.ENDIAN_BIG,
-            });
-          } else if (currentId == STATUS_PRESET_GROUP) {
-            mode = data.decodeNumber(Lang.NUMBER_FORMAT_UINT32, {
-              :offset => 0,
-              :endianness => Lang.ENDIAN_BIG,
-            });
-          } else if (currentId == STATUS_PRESET) {
-            genericModeName = data.decodeNumber(Lang.NUMBER_FORMAT_UINT32, {
-              :offset => 0,
-              :endianness => Lang.ENDIAN_BIG,
-            });
-          } else if (currentId == STATUS_VIDEO_PRESET) {
-            videoModeName = data.decodeNumber(Lang.NUMBER_FORMAT_UINT32, {
-              :offset => 0,
-              :endianness => Lang.ENDIAN_BIG,
-            });
-          } else if (currentId == STATUS_PHOTO_PRESET) {
-            photoModeName = data.decodeNumber(Lang.NUMBER_FORMAT_UINT32, {
-              :offset => 0,
-              :endianness => Lang.ENDIAN_BIG,
-            });
-          } else if (currentId == STATUS_TIMELAPSE_PRESET) {
-            timelapseModeName = data.decodeNumber(Lang.NUMBER_FORMAT_UINT32, {
-              :offset => 0,
-              :endianness => Lang.ENDIAN_BIG,
-            });
-          } else if (currentId == STATUS_RECORDING) {
-            recording =
-              data.decodeNumber(Lang.NUMBER_FORMAT_UINT8, {
+      if (
+        queryResponse[0] == FEATURE_TYPE_PRESET &&
+        (queryResponse[1] == RESPONSE_TYPE_PRESET ||
+          queryResponse[1] == NOTIFICATION_TYPE_PRESET)
+      ) {
+        presetGroups = new PresetGroups(queryResponse.slice(2, null));
+        queryResponse = new [0]b;
+      } else {
+        var currentByte = 2;
+        var currentId = -1;
+        var data = new [0]b;
+        var size = 0;
+        while (currentByte < queryResponse.size()) {
+          currentId = queryResponse[currentByte];
+          size = queryResponse[currentByte + 1].toNumber();
+          data = queryResponse.slice(currentByte + 2, currentByte + 2 + size);
+          debug(Lang.format("$1$ $2$ $3$", [currentId, size, data]));
+          currentByte = currentByte + 2 + size;
+          if (
+            queryResponse[0] == RESPONSE_TYPE_STATUS ||
+            queryResponse[0] == NOTIFICATION_TYPE_STATUS
+          ) {
+            if (currentId == STATUS_DURATION) {
+              recordingDuration = data.decodeNumber(Lang.NUMBER_FORMAT_UINT32, {
                 :offset => 0,
                 :endianness => Lang.ENDIAN_BIG,
-              }) == 1;
-          }
-        } else if (
-          queryResponse[0] == RESPONSE_TYPE_SETTING ||
-          queryResponse[0] == NOTIFICATION_TYPE_SETTING
-        ) {
-          if (currentId == STATUS_RES) {
-            resolution = data.decodeNumber(Lang.NUMBER_FORMAT_UINT8, {
-              :offset => 0,
-              :endianness => Lang.ENDIAN_BIG,
-            });
-          } else if (currentId == STATUS_FOV) {
-            fov = data.decodeNumber(Lang.NUMBER_FORMAT_UINT8, {
-              :offset => 0,
-              :endianness => Lang.ENDIAN_BIG,
-            });
-          }
-          if (currentId == STATUS_FPS) {
-            fps = data.decodeNumber(Lang.NUMBER_FORMAT_UINT8, {
-              :offset => 0,
-              :endianness => Lang.ENDIAN_BIG,
-            });
-          }
-          if (currentId == STATUS_FORMAT) {
-            format = data.decodeNumber(Lang.NUMBER_FORMAT_UINT8, {
-              :offset => 0,
-              :endianness => Lang.ENDIAN_BIG,
-            });
-          }
-          if (currentId == STATUS_LENS_121) {
-            lens_121 = data.decodeNumber(Lang.NUMBER_FORMAT_UINT8, {
-              :offset => 0,
-              :endianness => Lang.ENDIAN_BIG,
-            });
-          }
-          if (currentId == STATUS_LENS_122) {
-            lens_122 = data.decodeNumber(Lang.NUMBER_FORMAT_UINT8, {
-              :offset => 0,
-              :endianness => Lang.ENDIAN_BIG,
-            });
-          }
-          if (currentId == STATUS_LENS_123) {
-            lens_123 = data.decodeNumber(Lang.NUMBER_FORMAT_UINT8, {
-              :offset => 0,
-              :endianness => Lang.ENDIAN_BIG,
-            });
+              });
+            } else if (currentId == STATUS_REM_PHOTOS) {
+              remainingPhotos = data.decodeNumber(Lang.NUMBER_FORMAT_UINT32, {
+                :offset => 0,
+                :endianness => Lang.ENDIAN_BIG,
+              });
+            } else if (currentId == STATUS_REM_VIDEOS) {
+              remainingTime = data.decodeNumber(Lang.NUMBER_FORMAT_UINT32, {
+                :offset => 0,
+                :endianness => Lang.ENDIAN_BIG,
+              });
+            } else if (currentId == STATUS_REM_TIMELAPSE) {
+              remainingTimelapse = data.decodeNumber(
+                Lang.NUMBER_FORMAT_UINT32,
+                {
+                  :offset => 0,
+                  :endianness => Lang.ENDIAN_BIG,
+                }
+              );
+              remainingTimeDelta = 0;
+            } else if (currentId == STATUS_BATTERY_PERCENT) {
+              batteryLife = data.decodeNumber(Lang.NUMBER_FORMAT_UINT8, {
+                :offset => 0,
+                :endianness => Lang.ENDIAN_BIG,
+              });
+            } else if (currentId == STATUS_PRESET_GROUP) {
+              mode = data.decodeNumber(Lang.NUMBER_FORMAT_UINT32, {
+                :offset => 0,
+                :endianness => Lang.ENDIAN_BIG,
+              });
+            } else if (currentId == STATUS_PRESET) {
+              modeId = data.decodeNumber(Lang.NUMBER_FORMAT_UINT32, {
+                :offset => 0,
+                :endianness => Lang.ENDIAN_BIG,
+              });
+            } else if (currentId == STATUS_RECORDING) {
+              recording =
+                data.decodeNumber(Lang.NUMBER_FORMAT_UINT8, {
+                  :offset => 0,
+                  :endianness => Lang.ENDIAN_BIG,
+                }) == 1;
+            }
+          } else if (
+            queryResponse[0] == RESPONSE_TYPE_SETTING ||
+            queryResponse[0] == NOTIFICATION_TYPE_SETTING
+          ) {
+            if (currentId == STATUS_RES) {
+              resolution = data.decodeNumber(Lang.NUMBER_FORMAT_UINT8, {
+                :offset => 0,
+                :endianness => Lang.ENDIAN_BIG,
+              });
+            } else if (currentId == STATUS_FOV) {
+              fov = data.decodeNumber(Lang.NUMBER_FORMAT_UINT8, {
+                :offset => 0,
+                :endianness => Lang.ENDIAN_BIG,
+              });
+            }
+            if (currentId == STATUS_FPS) {
+              fps = data.decodeNumber(Lang.NUMBER_FORMAT_UINT8, {
+                :offset => 0,
+                :endianness => Lang.ENDIAN_BIG,
+              });
+            }
+            if (currentId == STATUS_FORMAT) {
+              format = data.decodeNumber(Lang.NUMBER_FORMAT_UINT8, {
+                :offset => 0,
+                :endianness => Lang.ENDIAN_BIG,
+              });
+            }
+            if (currentId == STATUS_LENS_121) {
+              lens_121 = data.decodeNumber(Lang.NUMBER_FORMAT_UINT8, {
+                :offset => 0,
+                :endianness => Lang.ENDIAN_BIG,
+              });
+            }
+            if (currentId == STATUS_LENS_122) {
+              lens_122 = data.decodeNumber(Lang.NUMBER_FORMAT_UINT8, {
+                :offset => 0,
+                :endianness => Lang.ENDIAN_BIG,
+              });
+            }
+            if (currentId == STATUS_LENS_123) {
+              lens_123 = data.decodeNumber(Lang.NUMBER_FORMAT_UINT8, {
+                :offset => 0,
+                :endianness => Lang.ENDIAN_BIG,
+              });
+            }
           }
         }
       }
@@ -526,6 +529,9 @@ class GoPro extends Ble.BleDelegate {
     if (!settingsSubscribed) {
       sendQuery("SETTINGS_UPDATES");
       settingsSubscribed = true;
+    } else if (!presetListFetched) {
+      sendQuery("PRESET_LIST");
+      presetListFetched = true;
     }
   }
 

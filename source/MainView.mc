@@ -27,6 +27,7 @@ class MainView extends WatchUi.DataField {
       Application.Properties.getValue("enable_debug"),
       false
     );
+    gopro.parseQueryResponse();
   }
 
   function onLayout(dc as Dc) as Void {
@@ -42,6 +43,9 @@ class MainView extends WatchUi.DataField {
   function compute(info as Activity.Info) as Void {
     shouldConnect = gopro.shouldConnect;
     gopro.accumulateQueryResponses();
+    if (gopro.presetGroups != null) {
+      gopro.presetGroups.parse();
+    }
     tick = (tick + 1) % 15;
     if (gopro.connectionStatus == GoPro.STATUS_CONNECTED && tick == 0) {
       gopro.keepalive();
@@ -63,6 +67,9 @@ class MainView extends WatchUi.DataField {
 
     if (!shouldConnect) {
       layout.setLayout(dc, -1);
+      dc.setColor(foregroundColor, foregroundColor);
+      dc.fillRectangle(width * 0.2, height * 0.3, width * 0.6, height * 0.4);
+      dc.setColor(foregroundColor, backgroundColor);
       layout.durationText.setColor(backgroundColor);
       layout.durationText.setBackgroundColor(foregroundColor);
       layout.durationText.setText(
@@ -102,9 +109,9 @@ class MainView extends WatchUi.DataField {
       gopro.formatSettings();
 
       layout.modeText.setColor(foregroundColor);
-      var modeText = "";
+      var modeText = gopro.modeName;
       if (enableDebug) {
-        modeText = Lang.format("$1$\n$2$\n$3$", [
+        modeText = Lang.format("$2$\n$3$\n$4$", [
           gopro.logs[0],
           gopro.logs[1],
           gopro.logs[2],
