@@ -261,6 +261,7 @@ class GoPro extends Ble.BleDelegate {
   var presetListFetched = false;
   var presetGroups = null;
   var currentPreset = null;
+  var ProfileRegistered = false;
 
   function debug(str) {
     System.println("[ble] " + str);
@@ -581,38 +582,41 @@ class GoPro extends Ble.BleDelegate {
   }
 
   function onProfileRegister(uuid, status) {
+    profileRegistered = true;
     debug("registered: " + uuid + " " + status);
   }
 
   function registerProfiles() {
-    var profile = {
-      :uuid => CONTROL_AND_QUERY_SERVICE,
-      :characteristics => [
-        {
-          :uuid => COMMAND_NOTIFICATION,
-          :descriptors => [CONTROL_AND_QUERY_DESC],
-        },
-        {
-          :uuid => COMMAND_CHAR,
-        },
-        {
-          :uuid => SETTINGS_NOTIFICATION,
-          :descriptors => [CONTROL_AND_QUERY_DESC],
-        },
-        {
-          :uuid => SETTINGS_CHAR,
-        },
-        {
-          :uuid => QUERY_NOTIFICATION,
-          :descriptors => [CONTROL_AND_QUERY_DESC],
-        },
-        {
-          :uuid => QUERY_CHAR,
-        },
-      ],
-    };
+    if (!profileRegistered) {
+      var profile = {
+        :uuid => CONTROL_AND_QUERY_SERVICE,
+        :characteristics => [
+          {
+            :uuid => COMMAND_NOTIFICATION,
+            :descriptors => [CONTROL_AND_QUERY_DESC],
+          },
+          {
+            :uuid => COMMAND_CHAR,
+          },
+          {
+            :uuid => SETTINGS_NOTIFICATION,
+            :descriptors => [CONTROL_AND_QUERY_DESC],
+          },
+          {
+            :uuid => SETTINGS_CHAR,
+          },
+          {
+            :uuid => QUERY_NOTIFICATION,
+            :descriptors => [CONTROL_AND_QUERY_DESC],
+          },
+          {
+            :uuid => QUERY_CHAR,
+          },
+        ],
+      };
 
-    BluetoothLowEnergy.registerProfile(profile);
+      BluetoothLowEnergy.registerProfile(profile);
+    }
   }
 
   function onScanStateChange(scanState, status) {

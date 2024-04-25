@@ -15,4 +15,6 @@
     <bitmap id="grey_photo" filename="grey/camera.png" scaleY="20%" />
     <bitmap id="grey_video" filename="grey/video.png" scaleY="20%" />
     <bitmap id="grey_timelapse" filename="grey/timelapse.png" scaleY="20%" />
+    <bitmap id="on" filename="on.png" scaleY="10%" />
+    <bitmap id="off" filename="off.png" scaleY="10%" />
 </drawables>

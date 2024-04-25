@@ -38,7 +38,21 @@ class MainView extends WatchUi.DataField {
 
   function onTimerStart() {}
 
-  function onTimerResume() {}
+  function onTimerResume() {
+    gopro.open();
+  }
+
+  function onTimerReset() {
+    gopro.close();
+  }
+
+  function onTimerStop() {
+    gopro.close();
+  }
+
+  function onTimerPause() {
+    gopro.close();
+  }
 
   function compute(info as Activity.Info) as Void {
     shouldConnect = gopro.shouldConnect;

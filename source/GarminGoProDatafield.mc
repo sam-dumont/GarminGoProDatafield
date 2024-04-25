@@ -25,7 +25,6 @@ class GarminGoProDatafieldApp extends Application.AppBase {
   function onStop(state as Dictionary?) as Void {
     if (gopro.device != null) {
       gopro.close();
-      Ble.unpairDevice(gopro.device);
     }
   }
 
