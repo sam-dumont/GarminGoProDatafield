@@ -109,11 +109,15 @@ class MainView extends WatchUi.DataField {
       layout.remainingText.setText(
         enableDebug
           ? Lang.format("$1$\n$2$\n$3$", [
+              gopro.debug_logs[0],
+              gopro.debug_logs[1],
+              gopro.debug_logs[2],
+            ])
+          : Lang.format("$1$\n$2$\n$3$", [
               gopro.logs[0],
               gopro.logs[1],
               gopro.logs[2],
             ])
-          : ""
       );
     } else {
       layout.setLayout(dc, 1);

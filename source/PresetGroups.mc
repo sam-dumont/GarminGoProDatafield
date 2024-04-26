@@ -1,3 +1,9 @@
+/* Parts of this file are direct copy or modifications of code originating from
+https://github.com/chesapeaketechnology/BufMonkey
+
+Licensed under Apache License
+*/
+
 /**
  * Most Significant Bit in a byte
  */
@@ -37,15 +43,16 @@ class PresetGroups {
   // due to watchdog limitations, we need to parse a few presets, one at a time
   function parse() {
     if (data != null) {
+      System.println("NEED TO PARSE PRESET GROUPS !");
       parsed = false;
       currentPresetDataIndex = 0;
       currentPresetGroup = -1;
-      presets = {};
       binPresetData = [];
       index = 0;
       splitData();
     }
-    if (!parsed && !currentlyParsing) {
+    if (!parsed && !currentlyParsing && binPresetData.size() > 0) {
+      System.println("PRESET GROUP DATA RECEIVED, START PARSING!");
       currentlyParsing = true;
       parsePresetGroup(currentPresetDataIndex);
       currentlyParsing = false;
@@ -156,7 +163,11 @@ class PresetGroups {
             presetGroupParserIndex = length[1] + 1 + length[0];
           }
         }
-        presets.get(currentPresetGroup).put(preset.get("id").toNumber(), preset);
+        if (preset.get("title") != null) {
+          presets
+            .get(currentPresetGroup)
+            .put(preset.get("id").toNumber(), preset);
+        }
       } else if (header[0] == 0 && (header[1] == 3 || header[1] == 4)) {
         // other fields we ignore
         var fieldId = parseUnsignedVarInt(
