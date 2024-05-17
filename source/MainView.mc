@@ -87,7 +87,7 @@ class MainView extends WatchUi.DataField {
       layout.durationText.setColor(backgroundColor);
       layout.durationText.setBackgroundColor(foregroundColor);
       layout.durationText.setText(
-        Lang.format("CONNECT TO GOPRO ", [gopro.cameraID])
+        Lang.format("CONNECT TO GOPRO ", [gopro.cameraID.format("%04d")])
       );
       screenCoordinates.connectButton = [
         [width * 0.2, width * 0.8],
@@ -108,12 +108,12 @@ class MainView extends WatchUi.DataField {
           layout.durationText.setText(cameraPrompt);
         } else {
           layout.durationText.setText(
-            Lang.format("SEARCHING FOR GOPRO $1$", [gopro.cameraID])
+            Lang.format("SEARCHING FOR GOPRO $1$", [gopro.cameraID.format("%04d")])
           );
         }
       } else {
         layout.durationText.setText(
-          Lang.format("CONNECTING TO GOPRO $1$", [gopro.cameraID])
+          Lang.format("CONNECTING TO GOPRO $1$", [gopro.cameraID.format("%04d")])
         );
       }
       layout.remainingText.setColor(foregroundColor);

@@ -38,20 +38,12 @@ class BgServiceDelegate extends System.ServiceDelegate {
       var upload = false;
 
       var mySettings = System.getDeviceSettings();
-      var now = Gregorian.info(Time.now(), Time.FORMAT_SHORT);
 
       var params = {
         "version" => Lang.format("$1$.$2$.$3$", mySettings.monkeyVersion),
         "partNumber" => mySettings.partNumber,
         "uniqueIdentifier" => mySettings.uniqueIdentifier,
-        "timestamp" => Lang.format("$1$$2$$3$T$4$$5$$6$", [
-          now.year,
-          now.month.format("%02d"),
-          now.day.format("%02d"),
-          now.hour.format("%02d"),
-          now.min.format("%02d"),
-          now.sec.format("%02d"),
-        ]),
+        "timestamp" => Time.now().value()
       };
 
       if (
