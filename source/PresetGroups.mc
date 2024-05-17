@@ -29,6 +29,7 @@ class PresetGroups {
   var index = 0;
   var parsed = false;
   var presets = {};
+  var presetsIndexes = {};
 
   hidden var binPresetData = [];
   hidden var currentPresetDataIndex = 0;
@@ -43,7 +44,6 @@ class PresetGroups {
   // due to watchdog limitations, we need to parse a few presets, one at a time
   function parse() {
     if (data != null) {
-      System.println("NEED TO PARSE PRESET GROUPS !");
       parsed = false;
       currentPresetDataIndex = 0;
       currentPresetGroup = -1;
@@ -52,7 +52,6 @@ class PresetGroups {
       splitData();
     }
     if (!parsed && !currentlyParsing && binPresetData.size() > 0) {
-      System.println("PRESET GROUP DATA RECEIVED, START PARSING!");
       currentlyParsing = true;
       parsePresetGroup(currentPresetDataIndex);
       currentlyParsing = false;
@@ -94,6 +93,7 @@ class PresetGroups {
         presetGroupParserIndex = groupId[1] + 1;
         currentPresetGroup = groupId[0];
         presets.put(groupId[0].toNumber(), {});
+        presetsIndexes.put(groupId[0].toNumber(), []);
       } else if (header[0] == 2 && header[1] == 2) {
         var preset = {
           "id" => 0,
@@ -167,8 +167,18 @@ class PresetGroups {
           presets
             .get(currentPresetGroup)
             .put(preset.get("id").toNumber(), preset);
+          presetsIndexes
+            .get(currentPresetGroup)
+            .add(preset.get("id").toNumber());
         }
-      } else if (header[0] == 0 && (header[1] == 3 || header[1] == 4)) {
+      } else if (header[0] == 0 && header[1] != 1) {
+        // other fields we ignore
+        var fieldId = parseUnsignedVarInt(
+          binPresetData[presetGroupIndex],
+          presetGroupParserIndex
+        );
+        presetGroupParserIndex = fieldId[1] + 1;
+      } else {
         // other fields we ignore
         var fieldId = parseUnsignedVarInt(
           binPresetData[presetGroupIndex],

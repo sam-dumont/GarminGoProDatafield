@@ -11,5 +11,13 @@ class ScreenCoordinates {
     [0, 0],
     [0, 0],
   ];
+  var nextPresetButton = [
+    [0, 0],
+    [0, 0],
+  ];
+  var prevPresetButton = [
+    [0, 0],
+    [0, 0],
+  ];
   function initialize() {}
 }

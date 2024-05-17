@@ -2,4 +2,5 @@
     <string id="AppName">GoPro Remote</string>
     <string id="gopro_id">GoPro Camera ID</string>
     <string id="enable_debug">Enable Debug messages ?</string>
+    <string id="send_logs">Transfer logs to developer ?</string>
 </strings>

@@ -17,4 +17,7 @@
     <bitmap id="grey_timelapse" filename="grey/timelapse.png" scaleY="20%" />
     <bitmap id="on" filename="on.png" scaleY="10%" />
     <bitmap id="off" filename="off.png" scaleY="10%" />
+    <bitmap id="record_bg" filename="record_bg.png" packingFormat="png" />
+    <bitmap id="white_mode_bg" filename="white/mode_bg.png" scaleX="80%" scaleY="10%" packingFormat="png" />
+    <bitmap id="black_mode_bg" filename="black/mode_bg.png" scaleY="10%" packingFormat="png" />
 </drawables>

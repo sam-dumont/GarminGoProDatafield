@@ -97,9 +97,20 @@ class MainView extends WatchUi.DataField {
       layout.setLayout(dc, 0);
       layout.durationText.setColor(foregroundColor);
       if (gopro.connectionStatus == GoPro.STATUS_SEARCHING) {
-        layout.durationText.setText(
-          Lang.format("SEARCHING FOR GOPRO $1$", [gopro.cameraID])
-        );
+        if (gopro.cameraID == 0) {
+          var cameraPrompt = "PLEASE SET THE CAMERA ID IN CONNECT IQ SETTINGS.";
+          if (gopro.foundCameraIDs.size() > 0) {
+            cameraPrompt = Lang.format("$1$\nFOUND IDS: $2$", [
+              cameraPrompt,
+              gopro.foundCameraIDs,
+            ]);
+          }
+          layout.durationText.setText(cameraPrompt);
+        } else {
+          layout.durationText.setText(
+            Lang.format("SEARCHING FOR GOPRO $1$", [gopro.cameraID])
+          );
+        }
       } else {
         layout.durationText.setText(
           Lang.format("CONNECTING TO GOPRO $1$", [gopro.cameraID])
@@ -129,7 +140,7 @@ class MainView extends WatchUi.DataField {
       layout.modeText.setColor(foregroundColor);
       var modeText = gopro.modeName;
       if (enableDebug) {
-        modeText = Lang.format("$2$\n$3$\n$4$", [
+        modeText = Lang.format("$1$\n$2$\n$3$", [
           gopro.logs[0],
           gopro.logs[1],
           gopro.logs[2],
@@ -153,20 +164,20 @@ class MainView extends WatchUi.DataField {
         if (gopro.recording) {
           dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
           dc.fillCircle(
-            dc.getWidth() * 0.15,
+            dc.getWidth() * 0.2,
             dc.getHeight() * 0.325,
             dc.getHeight() * 0.0875
           );
           dc.fillCircle(
-            dc.getWidth() * 0.85,
+            dc.getWidth() * 0.8,
             dc.getHeight() * 0.325,
             dc.getHeight() * 0.0875
           );
           dc.fillRectangle(
-            dc.getWidth() * 0.15,
+            dc.getWidth() * 0.2,
             dc.getHeight() * 0.2375,
-            dc.getWidth() * 0.7,
-            dc.getHeight() * 0.176
+            dc.getWidth() * 0.6,
+            dc.getHeight() * 0.178
           );
           layout.durationText.setColor(Graphics.COLOR_WHITE);
           dc.setColor(foregroundColor, backgroundColor);
@@ -257,6 +268,42 @@ class MainView extends WatchUi.DataField {
         ],
         [height * 0.75, height * 0.75 + statusIcon.getHeight()],
       ];
+
+      if (!gopro.recording) {
+        if (!gopro.firstPreset) {
+          screenCoordinates.prevPresetButton = [
+            [width * 0.02, width * 0.13],
+            [height * 0.47, height * 0.58],
+          ];
+
+          dc.fillPolygon([
+            [width * 0.1, height * 0.5],
+            [width * 0.1, height * 0.55],
+            [width * 0.05, height * 0.525],
+          ]);
+        } else {
+          screenCoordinates.prevPresetButton = [
+            [0, 0],
+            [0, 0],
+          ];
+        }
+        if (!gopro.lastPreset) {
+          screenCoordinates.nextPresetButton = [
+            [width * 0.87, width * 0.98],
+            [height * 0.47, height * 0.58],
+          ];
+          dc.fillPolygon([
+            [width * 0.9, height * 0.5],
+            [width * 0.9, height * 0.55],
+            [width * 0.95, height * 0.525],
+          ]);
+        }
+      } else {
+        screenCoordinates.nextPresetButton = [
+          [0, 0],
+          [0, 0],
+        ];
+      }
     }
     layout.draw(dc);
   }

@@ -20,6 +20,16 @@ class SettingsMenu extends WatchUi.Menu2 {
         null
       )
     );
+
+    Menu2.addItem(
+      new WatchUi.ToggleMenuItem(
+        "Send Debug Logs",
+        null,
+        "send_logs",
+        Util.replaceNull(Application.Properties.getValue("send_logs"), false),
+        null
+      )
+    );
   }
 }
 
@@ -37,6 +47,11 @@ class SettingsMenuDelegate extends WatchUi.Menu2InputDelegate {
           Application.Properties.getValue("enable_debug"),
           false
         )
+      );
+    } else if (id.equals("send_logs")) {
+      Application.Properties.setValue(
+        "send_logs",
+        !Util.replaceNull(Application.Properties.getValue("send_logs"), false)
       );
     }
   }
