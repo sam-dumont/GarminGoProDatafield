@@ -19,5 +19,9 @@ class ScreenCoordinates {
     [0, 0],
     [0, 0],
   ];
+  var onOffButton = [
+    [0, 0],
+    [0, 0],
+  ];
   function initialize() {}
 }

@@ -31,6 +31,7 @@ class GarminGoProDatafieldApp extends Application.AppBase {
   // Return the initial view of your application here
   function getInitialView() as Array<Views or InputDelegates>? {
     regTempEvent();
+    Application.Storage.setValue("scanResult", null);
     Application.Storage.setValue(
       "storedLogs",
       Util.replaceNull(Application.Storage.getValue("logs"), [])
@@ -53,8 +54,10 @@ class GarminGoProDatafieldApp extends Application.AppBase {
     $.mainView = new MainView(gopro, screenCoordinates);
 
     return (
-      [$.mainView, new RecordingDelegate(gopro, screenCoordinates)] as
-      Array<Views or InputDelegates>
+      [
+        $.mainView,
+        new RecordingDelegate(gopro, screenCoordinates, $.mainView),
+      ] as Array<Views or InputDelegates>
     );
   }
 

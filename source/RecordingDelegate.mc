@@ -5,11 +5,13 @@ import Toybox.Lang;
 class RecordingDelegate extends WatchUi.BehaviorDelegate {
   var screenCoordinates;
   var gopro;
+  var mainView;
 
-  function initialize(gopro, screenCoordinates) {
+  function initialize(gopro, screenCoordinates, mainView) {
     BehaviorDelegate.initialize();
     self.screenCoordinates = screenCoordinates;
     self.gopro = gopro;
+    self.mainView = mainView;
   }
 
   function withinBoundaries(coordinates, buttonCoordinates) {
@@ -27,11 +29,17 @@ class RecordingDelegate extends WatchUi.BehaviorDelegate {
 
   function onTap(clickEvent) {
     var coordinates = clickEvent.getCoordinates();
+
+    mainView.setTapCoordinates(coordinates);
+
     if (
       withinBoundaries(coordinates, screenCoordinates.connectButton) &&
       !gopro.shouldConnect
     ) {
       gopro.shouldConnect = true;
+      if(gopro.asleep){
+        gopro.wakeup();
+      }
     } else if (
       withinBoundaries(coordinates, screenCoordinates.modeButton) &&
       !gopro.recording
@@ -60,7 +68,7 @@ class RecordingDelegate extends WatchUi.BehaviorDelegate {
       !gopro.recording
     ) {
       var newPreset = gopro.getPrevNextPresetID(true);
-      System.println("Will send preset "+newPreset);
+      System.println("Will send preset " + newPreset);
       if (newPreset != -1) {
         var args = [0, 0, 0, 0]b.encodeNumber(
           gopro.getPrevNextPresetID(true),
@@ -75,7 +83,7 @@ class RecordingDelegate extends WatchUi.BehaviorDelegate {
       !gopro.recording
     ) {
       var newPreset = gopro.getPrevNextPresetID(false);
-      System.println("Will send preset "+newPreset);
+      System.println("Will send preset " + newPreset);
       if (newPreset != -1) {
         var args = [0, 0, 0, 0]b.encodeNumber(newPreset, NUMBER_FORMAT_UINT32, {
           :offset => 0,
@@ -84,8 +92,12 @@ class RecordingDelegate extends WatchUi.BehaviorDelegate {
         System.println(args);
         gopro.sendCommand("PRESET_ID", args);
       }
-    } else {
-      "NO BUTTON";
+    } else if (withinBoundaries(coordinates, screenCoordinates.onOffButton)) {
+      if (gopro.asleep) {
+        gopro.wakeup();
+      } else {
+        gopro.sleep();
+      }
     }
 
     return true;

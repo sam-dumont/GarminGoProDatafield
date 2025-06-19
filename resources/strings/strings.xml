@@ -1,6 +1,8 @@
 <strings>
-    <string id="AppName">GoPro Remote</string>
+    <string id="AppName">BETA GPR</string>
     <string id="gopro_id">GoPro Camera ID</string>
     <string id="enable_debug">Enable Debug messages ?</string>
     <string id="send_logs">Transfer logs to developer ?</string>
+    <string id="keepalive">Keep the GoPro on at all time ?</string>
+    <string id="auto_stop">Start/stop recording when activity starts/stops ?</string>
 </strings>

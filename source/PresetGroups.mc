@@ -67,9 +67,16 @@ class PresetGroups {
 
     while (index < data.size()) {
       header = parseProtoHeader(data[index]);
-      if (header[0] == 2 && header[1] == 1) {
+      if (
+        header[0] == 2 &&
+        (header[1] == 1 || header[1] == 2 || header[1] == 3)
+      ) {
         length = parseUnsignedVarInt(data, index);
-        binPresetData.add(data.slice(length[1] + 1, length[1] + 1 + length[0]));
+        if (header[1] == 1) {
+          binPresetData.add(
+            data.slice(length[1] + 1, length[1] + 1 + length[0])
+          );
+        }
         index = length[1] + 1 + length[0];
       }
     }

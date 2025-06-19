@@ -5,7 +5,7 @@
         Use "Monkey C: Edit Application" from the Visual Studio Code command palette
         to update the application attributes.
     -->
-    <iq:application id="74ca4a55-9bac-4658-9713-8ed6ca74ac00" type="datafield" name="@Strings.AppName" entry="GarminGoProDatafieldApp" launcherIcon="@Drawables.LauncherIcon" minApiLevel="5.0.0">
+    <iq:application id="ca32b7ec-0523-4ac7-a53f-eedcf12bfb3d" type="datafield" name="@Strings.AppName" entry="GarminGoProDatafieldApp" launcherIcon="@Drawables.LauncherIcon" minApiLevel="5.0.0">
         <!--
             Use the following from the Visual Studio Code comand palette to edit
             the build targets:
@@ -15,6 +15,7 @@
         -->
         <iq:products>
             <iq:product id="edge1040"/>
+            <iq:product id="edge1050"/>
             <iq:product id="edge840"/>
         </iq:products>
         <!--
