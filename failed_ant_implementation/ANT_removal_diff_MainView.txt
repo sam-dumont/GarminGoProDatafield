@@ -1,0 +1,35 @@
+# Diff: Removal of ANT+ logic from MainView.mc
+
+--- BEFORE (with ANT+ logic)
+
+  var antRemoteControl = null;
+  ...
+  antRemoteControl = new AntRemoteControlChannel(method(:logAntRemote));
+  antRemoteControl.open();
+  ...
+  function logAntRemote(msg) {
+    System.println("[ANT+ Remote] " + msg);
+  }
+  ...
+  function onHide() {
+    if (antRemoteControl != null) {
+      antRemoteControl.close();
+    }
+    DataField.onHide();
+  }
+
+--- AFTER (ANT+ logic removed)
+
+  // var antRemoteControl = null; (removed)
+  ...
+  // antRemoteControl = new AntRemoteControlChannel(method(:logAntRemote)); (removed)
+  // antRemoteControl.open(); (removed)
+  ...
+  // function logAntRemote(msg) { ... } (removed)
+  ...
+  function onHide() {
+    // if (antRemoteControl != null) { antRemoteControl.close(); } (removed)
+    DataField.onHide();
+  }
+
+All ANT+ references, variables, and related logic have been removed from MainView.mc.

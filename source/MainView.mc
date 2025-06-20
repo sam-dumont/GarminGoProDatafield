@@ -43,6 +43,10 @@ class MainView extends WatchUi.DataField {
     gopro.parseQueryResponse();
   }
 
+  function onHide() {
+    DataField.onHide();
+  }
+
   function onLayout(dc as Dc) as Void {
     dc.setAntiAlias(true);
     narrowDc = dc.getWidth() <= System.getDeviceSettings().screenWidth / 2;
