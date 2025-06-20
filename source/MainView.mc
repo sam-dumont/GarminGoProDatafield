@@ -163,19 +163,7 @@ class MainView extends WatchUi.DataField {
         );
       }
       layout.remainingText.setColor(foregroundColor);
-      layout.remainingText.setText(
-        enableDebug
-          ? Lang.format("$1$\n$2$\n$3$", [
-              gopro.debug_logs[0],
-              gopro.debug_logs[1],
-              gopro.debug_logs[2],
-            ])
-          : Lang.format("$1$\n$2$\n$3$", [
-              gopro.logs[0],
-              gopro.logs[1],
-              gopro.logs[2],
-            ])
-      );
+      layout.remainingText.setText(""); // Remove log display
     } else {
       layout.setLayout(dc, 1);
 
@@ -185,13 +173,7 @@ class MainView extends WatchUi.DataField {
 
       layout.modeText.setColor(foregroundColor);
       var modeText = gopro.modeName;
-      if (enableDebug) {
-        modeText = Lang.format("$1$\n$2$\n$3$", [
-          gopro.logs[0],
-          gopro.logs[1],
-          gopro.logs[2],
-        ]);
-      }
+      // Remove debug log display in modeText
       layout.modeText.setText(modeText);
 
       layout.settingsText.setText(gopro.settings);

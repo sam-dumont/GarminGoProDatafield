@@ -320,8 +320,6 @@ class GoPro extends Ble.BleDelegate {
   var lens_122 = 0;
   var lens_123 = 0;
   var liveBurstFormat = 0;
-  var logs = ["", "", ""];
-  var debug_logs = ["", "", ""];
   var mode = GoPro.MODE_VIDEO;
   var modeId = 9;
   var modeName = "Standard";
@@ -357,39 +355,19 @@ class GoPro extends Ble.BleDelegate {
   var pairingDevice = null;
   var asleep = false;
   var hasBeenConnected = false;
-  var sendLogs = Util.replaceNull(
-    Application.Properties.getValue("send_logs"),
-    false
-  );
   const SIMULATION_MODE = true; // Set to true to enable simulation mode
-
-  function debug(str, writeToFile) {
-    System.println("[ble debug] " + str);
-    if (writeToFile && sendLogs) {
-      Application.Storage.setValue(
-        "logs",
-        Application.Storage.getValue("logs").add(
-          Time.now().value() + "%" + str.toString()
-        )
-      );
-    }
-    debug_logs.add(str);
-    debug_logs = debug_logs.slice(1, null);
-  }
-
-  function info(str) {
-    debug(str, true);
-    System.println("[ble info] " + str);
-    logs.add(str);
-    logs = logs.slice(1, null);
-  }
 
   var commandQueue = [];
   var sendingCommand = false;
 
+  // Unified logging method
+  function log(str) {
+    System.println("[GoPro] " + str);
+  }
+
   function sendCommand(command, args) {
     if (SIMULATION_MODE) {
-      debug("[SIM] sendCommand called, BLE logic skipped: " + command, false);
+      log("[SIM] sendCommand called, BLE logic skipped: " + command);
       // Optionally simulate command queueing/processing here if needed
     } else {
       // Enqueue the command
@@ -437,15 +415,15 @@ class GoPro extends Ble.BleDelegate {
 
   function sendQuery(query) {
     if (SIMULATION_MODE) {
-      debug("[SIM] sendQuery called, BLE logic skipped: " + query, false);
+      log("[SIM] sendQuery called, BLE logic skipped: " + query);
       // Simulate query logic if needed
     } else {
       var service;
       var ch;
       if (device == null) {
-        debug("sendQuery: not connected", false);
+        log("sendQuery: not connected");
       } else {
-        debug("sendQuery " + commands.get(query) + "now !", false);
+        log("sendQuery " + commands.get(query) + "now !");
         service = device.getService(CONTROL_AND_QUERY_SERVICE);
         ch = service.getCharacteristic(QUERY_CHAR);
         try {
@@ -453,7 +431,7 @@ class GoPro extends Ble.BleDelegate {
             :writeType => Ble.WRITE_TYPE_DEFAULT,
           });
         } catch (ex) {
-          debug("can't send query " + commands.get(query), false);
+          log("can't send query " + commands.get(query));
         }
       }
     }
@@ -461,31 +439,30 @@ class GoPro extends Ble.BleDelegate {
 
   function enableNotifications(characteristic) {
     if (SIMULATION_MODE) {
-      debug(
+      log(
         "[SIM] enableNotifications called, BLE logic skipped: " +
-          characteristic,
-        false
+          characteristic
       );
     } else {
       var service;
       var command;
       var desc;
       if (device == null) {
-        debug("setNotifications: not connected", false);
+        log("setNotifications: not connected");
         return;
       }
-      debug("setNotifications", false);
+      log("setNotifications");
       service = device.getService(CONTROL_AND_QUERY_SERVICE);
       command = service.getCharacteristic(characteristic);
       desc = command.getDescriptor(CONTROL_AND_QUERY_DESC);
       desc.requestWrite([0x01, 0x00]b);
-      debug("Notifications requested for " + characteristic, false);
+      log("Notifications requested for " + characteristic);
     }
   }
 
   function open() {
     if (SIMULATION_MODE) {
-      debug("[SIM] open called, BLE logic skipped", true);
+      log("[SIM] open called, BLE logic skipped");
       connectionStatus = STATUS_SEARCHING;
     } else {
       registerProfiles();
@@ -496,13 +473,13 @@ class GoPro extends Ble.BleDelegate {
 
   function close() {
     if (SIMULATION_MODE) {
-      debug("[SIM] close called, BLE logic skipped", true);
+      log("[SIM] close called, BLE logic skipped");
       if (!asleep) {
         connectionStatus = STATUS_SEARCHING;
       }
       shouldConnect = false;
     } else {
-      debug("close", true);
+      log("close");
       if (scanning) {
         Ble.setScanState(Ble.SCAN_STATE_OFF);
       }
@@ -522,7 +499,7 @@ class GoPro extends Ble.BleDelegate {
 
   function onScanResults(scanResults) {
     if (SIMULATION_MODE) {
-      debug("[SIM] onScanResults called, BLE logic skipped", true);
+      log("[SIM] onScanResults called, BLE logic skipped");
       // Simulate scan results if needed
     } else {
       var name;
@@ -541,7 +518,7 @@ class GoPro extends Ble.BleDelegate {
             x.equals(CONTROL_AND_QUERY_SERVICE)
           ) {
             seenDevices.add(seenDevice);
-            debug(Lang.format("Seen Devices: $1$", [seenDevices]), true);
+            log(Lang.format("Seen Devices: $1$", [seenDevices]));
           }
           if (
             pairingDevice == null &&
@@ -567,15 +544,14 @@ class GoPro extends Ble.BleDelegate {
                 (name == null ||
                   name.equals("GoPro " + cameraID.format("%04d")))
               ) {
-                debug("found matching device. uuid: " + x, false);
-                info("Found device with name: " + name);
-                info("connecting to camera with id:" + name);
+                log("found matching device. uuid: " + x);
+                log("connecting to camera with id:" + name);
                 connectionStatus = STATUS_CONNECTING;
                 connect(result);
                 return;
               }
             } else if (pairingDevice != null || name == null) {
-              info("pairing camera for the first time");
+              log("pairing camera for the first time");
               connectionStatus = STATUS_CONNECTING;
               connect(result);
               return;
@@ -588,7 +564,7 @@ class GoPro extends Ble.BleDelegate {
 
   function parseQueryResponse() {
     if (SIMULATION_MODE) {
-      debug("[SIM] parseQueryResponse called, using hardcoded data", false);
+      log("[SIM] parseQueryResponse called, using hardcoded data");
       if (queryResponse.size() == 0 && presetGroups.data == null) {
         queryResponse = [245, 242]b;
         queryResponse = queryResponse.addAll(
@@ -628,7 +604,7 @@ class GoPro extends Ble.BleDelegate {
           currentId = queryResponse[currentByte];
           size = queryResponse[currentByte + 1].toNumber();
           data = queryResponse.slice(currentByte + 2, currentByte + 2 + size);
-          debug(Lang.format("$1$ $2$ $3$", [currentId, size, data]), false);
+          log(Lang.format("$1$ $2$ $3$", [currentId, size, data]));
           currentByte = currentByte + 2 + size;
           if (
             queryResponse[0] == RESPONSE_TYPE_STATUS ||
@@ -789,7 +765,7 @@ class GoPro extends Ble.BleDelegate {
   }
 
   function onCharacteristicWrite(ch, value) {
-    debug("char write " + ch.getUuid() + " " + value, false);
+    log("char write " + ch.getUuid() + " " + value);
     if (!settingsSubscribed) {
       sendQuery("SETTINGS_UPDATES");
       settingsSubscribed = true;
@@ -805,7 +781,7 @@ class GoPro extends Ble.BleDelegate {
   }
 
   function onCharacteristicChanged(ch, value) {
-    debug("char changed " + ch.getUuid() + " " + value, false);
+    log("char changed " + ch.getUuid() + " " + value);
     if (ch.getUuid().equals(COMMAND_NOTIFICATION)) {
       if (value.size() == 3) {
         parseCommandResponse(value);
@@ -818,18 +794,18 @@ class GoPro extends Ble.BleDelegate {
   }
 
   function onDescriptorWrite(desc, value) {
-    debug("descriptor write " + desc.getUuid() + " " + value, false);
+    log("descriptor write " + desc.getUuid() + " " + value);
     if (!commandNotificationsEnabled) {
       commandNotificationsEnabled = true;
-      info("command enabled, enabling notifications for QUERY");
+      log("command enabled, enabling notifications for QUERY");
       enableNotifications(QUERY_NOTIFICATION);
     } else if (!queryNotificationsEnabled) {
       queryNotificationsEnabled = true;
-      info("query enabled, enabling notifications for SETTINGS");
+      log("query enabled, enabling notifications for SETTINGS");
       enableNotifications(SETTINGS_NOTIFICATION);
     } else if (!settingsNotificationsEnabled) {
       settingsNotificationsEnabled = true;
-      info("all notifications enabled");
+      log("all notifications enabled");
       connectionStatus = STATUS_CONNECTED;
       sendQuery("VALUES_UPDATES");
     }
@@ -837,7 +813,7 @@ class GoPro extends Ble.BleDelegate {
 
   function onProfileRegister(uuid, status) {
     profileRegistered = true;
-    debug("registered: " + uuid + " " + status, true);
+    log("registered: " + uuid + " " + status);
   }
 
   function registerProfiles() {
@@ -874,9 +850,9 @@ class GoPro extends Ble.BleDelegate {
   }
 
   function onScanStateChange(scanState, status) {
-    debug("scanstate: " + scanState + " " + status, true);
+    log("scanstate: " + scanState + " " + status);
     if (scanState == Ble.SCAN_STATE_SCANNING) {
-      info("Starting scanning for GoPro");
+      log("Starting scanning for GoPro");
       scanning = true;
     } else {
       scanning = false;
@@ -884,8 +860,8 @@ class GoPro extends Ble.BleDelegate {
   }
 
   function onEncryptionStatus(device, status) {
-    info("device paired successfully !");
-    debug("bonded: " + device.getName() + " " + status, true);
+    log("device paired successfully !");
+    log("bonded: " + device.getName() + " " + status);
     if (status == Ble.STATUS_SUCCESS) {
       Application.Storage.setValue("paired", true);
       enableNotifications(COMMAND_NOTIFICATION);
@@ -894,8 +870,8 @@ class GoPro extends Ble.BleDelegate {
 
   function onConnectedStateChanged(device, state) {
     if (device.getName() != null) {
-      info("device connected: " + device.getName());
-      debug(device.getName() + " " + state, true);
+      log("device connected: " + device.getName());
+      log(device.getName() + " " + state);
     }
     if (state == Ble.CONNECTION_STATE_CONNECTED) {
       asleep = false;
@@ -908,7 +884,7 @@ class GoPro extends Ble.BleDelegate {
   }
 
   private function connect(result) {
-    debug("connect", true);
+    log("connect");
     Ble.setScanState(Ble.SCAN_STATE_OFF);
     var ld = Ble.pairDevice(result);
     if (ld != null) {
@@ -943,7 +919,7 @@ class GoPro extends Ble.BleDelegate {
       queryResponse = queryResponse.addAll(buf);
       bytesRemaining -= buf.size();
       if (bytesRemaining < 0) {
-        debug("received too much data. parsing is in unknown state", true);
+        log("received too much data. parsing is in unknown state");
       } else if (bytesRemaining == 0) {
         parseQueryResponse();
       }
@@ -973,7 +949,7 @@ class GoPro extends Ble.BleDelegate {
       commandResponse = commandResponse.addAll(buf);
       bytesRemaining -= buf.size();
       if (bytesRemaining < 0) {
-        debug("received too much data. parsing is in unknown state", true);
+        log("received too much data. parsing is in unknown state");
       } else if (bytesRemaining == 0) {
         parseCommandResponse(commandResponse);
       }
@@ -1005,7 +981,7 @@ class GoPro extends Ble.BleDelegate {
         lastPreset = false;
         firstPreset = false;
       }
-      debug(Lang.format("$1$,$2$", [presetIndex, mode]), false);
+      log(Lang.format("$1$,$2$", [presetIndex, mode]));
     }
     if (currentPreset != null) {
       flatModeId = currentPreset.get("flatMode").toNumber();
