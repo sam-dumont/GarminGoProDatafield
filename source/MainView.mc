@@ -6,22 +6,22 @@ using Toybox.BluetoothLowEnergy as Ble;
 import Toybox.System;
 
 class MainView extends WatchUi.DataField {
-  hidden var layout as Layout;
-  hidden var narrowDc;
-  hidden var shortDc;
-  hidden var backgroundColor;
-  hidden var foregroundColor;
-  hidden var screenCoordinates;
-  hidden var tick = 0;
-  hidden var tapTick = 0;
-  hidden var enableDebug = false;
+  var layout as Layout;
+  var narrowDc;
+  var shortDc;
+  var backgroundColor;
+  var foregroundColor;
+  var screenCoordinates;
+  var tick = 0;
+  var tapTick = 0;
+  var enableDebug = false;
   var gopro;
-  hidden var altitude = 0;
-  hidden var shouldConnect = false;
-  hidden var drawTap = false;
-  hidden var tapCoordinates = [0, 0];
-  hidden var keepalive = false;
-  hidden var autoStop = false;
+  var altitude = 0;
+  var shouldConnect = false;
+  var drawTap = false;
+  var tapCoordinates = [0, 0];
+  var keepalive = false;
+  var autoStop = false;
 
   function initialize(gopro as Ble.BleDelegate, screenCoordinates) {
     DataField.initialize();
@@ -105,8 +105,6 @@ class MainView extends WatchUi.DataField {
     }
   }
 
-  // Display the value you computed here. This will be called
-  // once a second when the data field is visible.
   function onUpdate(dc as Dc) as Void {
     backgroundColor = DataField.getBackgroundColor();
     foregroundColor = backgroundColor == 16777215 ? 0 : 16777215; //BLACK // WHITE

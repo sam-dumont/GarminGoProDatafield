@@ -15,29 +15,23 @@ class RecordingDelegate extends WatchUi.BehaviorDelegate {
   }
 
   function withinBoundaries(coordinates, buttonCoordinates) {
-    if (
+    return (
       coordinates[0] > buttonCoordinates[0][0] &&
       coordinates[0] < buttonCoordinates[0][1] &&
       coordinates[1] > buttonCoordinates[1][0] &&
       coordinates[1] < buttonCoordinates[1][1]
-    ) {
-      return true;
-    } else {
-      return false;
-    }
+    );
   }
 
   function onTap(clickEvent) {
     var coordinates = clickEvent.getCoordinates();
-
     mainView.setTapCoordinates(coordinates);
-
     if (
       withinBoundaries(coordinates, screenCoordinates.connectButton) &&
       !gopro.shouldConnect
     ) {
       gopro.shouldConnect = true;
-      if(gopro.asleep){
+      if (gopro.asleep) {
         gopro.wakeup();
       }
     } else if (
@@ -99,7 +93,6 @@ class RecordingDelegate extends WatchUi.BehaviorDelegate {
         gopro.sleep();
       }
     }
-
     return true;
   }
 }

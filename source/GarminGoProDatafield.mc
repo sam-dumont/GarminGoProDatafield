@@ -8,8 +8,8 @@ using Toybox.BluetoothLowEnergy as Ble;
 var mainView;
 
 class GarminGoProDatafieldApp extends Application.AppBase {
-  hidden var gopro;
-  hidden var screenCoordinates;
+  var gopro;
+  var screenCoordinates;
 
   function initialize() {
     AppBase.initialize();
@@ -25,19 +25,14 @@ class GarminGoProDatafieldApp extends Application.AppBase {
     if (gopro != null && gopro.device != null) {
       gopro.close();
     }
+    gopro = null;
+    screenCoordinates = null;
     AppBase.onStop(state);
   }
 
   // Return the initial view of your application here
   function getInitialView() as Array<Views or InputDelegates>? {
-    regTempEvent();
     Application.Storage.setValue("scanResult", null);
-    Application.Storage.setValue(
-      "storedLogs",
-      Util.replaceNull(Application.Storage.getValue("logs"), [])
-    );
-    Application.Storage.setValue("logsUploaded", false);
-    Application.Storage.setValue("logs", []);
 
     if (Application.Storage.getValue("lastPresetGroupUploaded") == null) {
       Application.Storage.setValue("lastPresetGroupUploaded", false);
@@ -65,9 +60,6 @@ class GarminGoProDatafieldApp extends Application.AppBase {
     var data = dataIn as Dictionary;
     System.println(data);
     if (data["responseCode"] == 200) {
-      if (data["types"].indexOf("logs") != -1) {
-        Application.Storage.setValue("logsUploaded", true);
-      }
       if (data["types"].indexOf("profiles") != -1) {
         Application.Storage.setValue("lastPresetGroupUploaded", true);
       }
@@ -85,15 +77,5 @@ class GarminGoProDatafieldApp extends Application.AppBase {
 
   function getSettingsView() {
     return [new SettingsMenu(), new SettingsMenuDelegate()];
-  }
-}
-
-function regTempEvent() {
-  var minutes = 5;
-
-  var time = new Time.Duration(minutes * 60);
-
-  if (Toybox.System has :ServiceDelegate) {
-    Background.registerForTemporalEvent(time);
   }
 }

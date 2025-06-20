@@ -1,6 +1,5 @@
 import Toybox.Application;
 using Toybox.Background;
-import Toybox.Communications;
 import Toybox.Lang;
 import Toybox.System;
 import Toybox.Time;
@@ -20,85 +19,15 @@ class BgServiceDelegate extends System.ServiceDelegate {
     if (data == null || data instanceof String) {
       data = {};
     } else if (data["types"] != null) {
-      if (data["types"].indexOf("logs") != -1) {
-        Application.Storage.setValue("logsUploaded", true);
-      }
       if (data["types"].indexOf("profiles") != -1) {
         Application.Storage.setValue("lastPresetGroupUploaded", true);
       }
     }
     data["responseCode"] = responseCode;
-
     Background.exit(data);
   }
 
-  function makeRequest() {
-    if (Communications has :makeWebRequest) {
-      var data;
-      var upload = false;
-
-      var mySettings = System.getDeviceSettings();
-
-      var params = {
-        "version" => Lang.format("$1$.$2$.$3$", mySettings.monkeyVersion),
-        "partNumber" => mySettings.partNumber,
-        "uniqueIdentifier" => mySettings.uniqueIdentifier,
-        "timestamp" => Time.now().value()
-      };
-
-      if (
-        Application.Storage.getValue("lastPresetGroupUploaded") != null &&
-        !Application.Storage.getValue("lastPresetGroupUploaded")
-      ) {
-        data = Application.Storage.getValue("lastPresetGroupResult");
-        if (data != null) {
-          upload = true;
-          params.put("profilesData", data);
-        }
-      }
-      if (
-        Application.Storage.getValue("logsUploaded") != null &&
-        !Application.Storage.getValue("logsUploaded")
-      ) {
-        data = Application.Storage.getValue("storedLogs");
-        if (data != null) {
-          upload = true;
-          params.put("logs", data);
-        }
-      }
-
-      if (!upload) {
-        return;
-      }
-
-      var apiKey = Application.Properties.getValue("api_key");
-      var apiEndpoint = Lang.format("$1$$2$", [
-        Application.Properties.getValue("api_endpoint"),
-        "full",
-      ]);
-
-      Communications.makeWebRequest(
-        apiEndpoint,
-        params,
-        {
-          :headers => {
-            "Content-Type" => Communications.REQUEST_CONTENT_TYPE_JSON,
-            "x-api-key" => apiKey,
-          },
-          :method => Communications.HTTP_REQUEST_METHOD_POST,
-          :responseType => Communications.HTTP_RESPONSE_CONTENT_TYPE_JSON,
-        },
-        method(:onReceive)
-      );
-    }
-  }
-
   function onTemporalEvent() {
-    if (
-      Application.Properties.getValue("send_logs") != null &&
-      Application.Properties.getValue("send_logs")
-    ) {
-      makeRequest();
-    }
+    // Only keep profile upload if needed in the future
   }
 }
