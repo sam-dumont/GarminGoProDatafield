@@ -99,18 +99,41 @@ class NotifyPresetStatus {
     
     public function Decode(input as ByteArray) as Void {
         var d = new Protobuf.Decoder(input);
+        d.debugPosition("NotifyPresetStatus: start");
         while (d.remaining() > 0) {
             var tag = d.varint32();
+            Toybox.System.println("[PROTOBUF DEBUG] NotifyPresetStatus: tag=" + tag + ", field=" + (tag >> 3) + ", wiretype=" + (tag & 7));
             switch (tag >> 3) {
                 case 1: {
                     Protobuf.assertWireType(tag, Protobuf.LEN);
+                    d.debugPosition("NotifyPresetStatus: before PresetGroup");
                     var msg = new PresetGroup();
                     msg.Decode(d.data());
                     presetGroupArray.add(msg);
+                    d.debugPosition("NotifyPresetStatus: after PresetGroup");
+                    break;
+                }
+                default: {
+                    // Skip unknown fields based on wire type
+                    var wireType = tag & 7;
+                    Toybox.System.println("[PROTOBUF DEBUG] Skipping unknown field: " + (tag >> 3) + ", wireType=" + wireType);
+                    if (wireType == Protobuf.VARINT) {
+                        d.varint32();
+                    } else if (wireType == Protobuf.LEN) {
+                        d.data();
+                    } else if (wireType == Protobuf.I32) {
+                        d.number();
+                    } else if (wireType == Protobuf.I64) {
+                        d.long();
+                    } else {
+                        Toybox.System.println("[PROTOBUF ERROR] Unknown wire type: " + wireType + ". Skipping 1 byte.");
+                        d.data(); // fallback: skip as length-delimited
+                    }
                     break;
                 }
             }
         }
+        d.debugPosition("NotifyPresetStatus: end");
     }
     
     public function GetPresetGroupArray() as Array<PresetGroup> {

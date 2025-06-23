@@ -122,7 +122,10 @@ module Protobuf {
     }
 
     function assertWireType(tag as Number, wt as WireType) as Void {
-        if (((tag & 7) as WireType) != wt) {
+        var actualWireType = (tag & 7) as WireType;
+        Toybox.System.println("[PROTOBUF DEBUG] Checking tag: " + tag + " (wire type: " + actualWireType + ") vs expected: " + wt);
+        if (actualWireType != wt) {
+            Toybox.System.println("[PROTOBUF ERROR] Invalid wire type: got " + actualWireType + ", expected " + wt + ". Tag: " + tag);
             throw new Exception("invalid wire type");
         }
     }
@@ -203,6 +206,18 @@ module Protobuf {
 
         public function remaining() as Number {
             return input.size() - endIdx;
+        }
+
+        public function debugPosition(msg as String) as Void {
+            Toybox.System.println("[PROTOBUF DEBUG] " + msg + ": startIdx=" + startIdx + ", endIdx=" + endIdx + ", remaining=" + remaining());
+            if (input != null && endIdx < input.size()) {
+                var preview = [];
+                var max = (input.size() - endIdx) > 8 ? 8 : (input.size() - endIdx);
+                for (var i = 0; i < max; i++) {
+                    preview.add(input[endIdx + i]);
+                }
+                Toybox.System.println("[PROTOBUF DEBUG] Next bytes: " + preview);
+            }
         }
 
         private function consume(l as Number) as Void {

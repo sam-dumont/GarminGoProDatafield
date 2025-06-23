@@ -11,7 +11,7 @@ class Layout {
   var settingsText;
 
   function initialize(layoutType) {
-    self.layoutType = layoutType;
+    layoutType = layoutType;
     fonts = [
       Graphics.FONT_TINY,
       Graphics.FONT_SMALL,
@@ -20,6 +20,7 @@ class Layout {
       Graphics.FONT_NUMBER_HOT,
       Graphics.FONT_NUMBER_THAI_HOT,
     ];
+
     durationText = new WatchUi.TextArea({
       :text => "00:09",
       :color => Graphics.COLOR_WHITE,
@@ -32,6 +33,7 @@ class Layout {
       :height => 0,
       :visible => true,
     });
+
     remainingText = new WatchUi.TextArea({
       :text => "9H:59",
       :color => Graphics.COLOR_WHITE,
@@ -44,6 +46,7 @@ class Layout {
       :height => 0,
       :visible => true,
     });
+
     batteryText = new WatchUi.TextArea({
       :text => "100%",
       :color => Graphics.COLOR_WHITE,
@@ -56,6 +59,7 @@ class Layout {
       :height => 0,
       :visible => false,
     });
+
     modeText = new WatchUi.TextArea({
       :text => "Cinematic",
       :color => Graphics.COLOR_WHITE,
@@ -68,6 +72,7 @@ class Layout {
       :height => 0,
       :visible => true,
     });
+
     settingsText = new WatchUi.TextArea({
       :text => "4K | 30 | L+",
       :color => Graphics.COLOR_WHITE,
@@ -145,6 +150,7 @@ class Layout {
         :height => height * 0.35,
         :visible => true,
       });
+
       remainingText.initialize({
         :text => "9H:59",
         :color => Graphics.COLOR_WHITE,
@@ -156,6 +162,7 @@ class Layout {
         :height => height * 0.1,
         :visible => true,
       });
+
       batteryText.initialize({
         :text => "100%",
         :color => Graphics.COLOR_WHITE,
@@ -167,7 +174,8 @@ class Layout {
         :height => height * 0.1,
         :visible => true,
       });
-      modeText.initialize({
+
+      modeText = new WatchUi.TextArea({
         :text => "Cinematic",
         :color => Graphics.COLOR_WHITE,
         :font => [fonts[3], fonts[2], fonts[1], fonts[0]],
@@ -176,9 +184,20 @@ class Layout {
         :justification => Graphics.TEXT_JUSTIFY_CENTER |
         Graphics.TEXT_JUSTIFY_VCENTER,
         :width => width,
+        :height => height * 0.15,
         :visible => true,
       });
+
       settingsText.initialize({
+        :text => "4K | 30 | L+",
+        :color => Graphics.COLOR_WHITE,
+        :font => [fonts[3], fonts[2], fonts[1], fonts[0]],
+        :locX => 0,
+        :locY => height * 0.6,
+        :justification => Graphics.TEXT_JUSTIFY_CENTER |
+        Graphics.TEXT_JUSTIFY_VCENTER,
+        :width => width,
+        :height => height * 0.1,
         :visible => true,
       });
     }

@@ -1,0 +1,29 @@
+# Diff: Auto-detect and save GoPro camera ID if not set
+
+--- BEFORE
+- Only connects to a GoPro if cameraID is set and matches device name.
+- No logic to auto-detect and save camera ID.
+
+--- AFTER
++ If cameraID is 0 or null, connects to the first GoPro found (by name).
++ After connecting, extracts the camera ID from the device name (e.g., "GoPro 1234") and saves it to Application.Properties for future use.
++ Logs the detected and saved camera ID.
+
+Key code changes:
+- In onScanResults:
+  if ((cameraID == null || cameraID == 0) && name != null && name.find("GoPro") != null ... ) {
+    connect(result);
+    return;
+  }
+- In onConnectedStateChanged:
+  if ((cameraID == null || cameraID == 0) && device.getName().find("GoPro ") == 0) {
+    var idStr = device.getName().substring(6); // after "GoPro "
+    var idNum = idStr.toNumber();
+    if (idNum != null && idNum > 0) {
+      cameraID = idNum;
+      Application.Properties.setValue("gopro_id", cameraID);
+      log("Saved detected cameraID: " + cameraID);
+    }
+  }
+
+This enables a more user-friendly pairing process for first-time use or after resetting the camera ID.

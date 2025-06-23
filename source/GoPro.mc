@@ -198,6 +198,7 @@ class GoPro extends Ble.BleDelegate {
     40 => "Chesty",
     41 => "Helmet",
     42 => "Bite",
+    55 => "Video Max",
     58 => "Basic",
     59 => "Ultra SloMo",
     60 => "Standard Endurance",
@@ -308,7 +309,10 @@ class GoPro extends Ble.BleDelegate {
   var batteryLife = 100;
   var burstFrequency = 0;
   var bytesRemaining = 0;
-  var cameraID = Application.Properties.getValue("gopro_id");
+  var cameraID = Util.replaceNull(
+    Application.Properties.getValue("gopro_id"),
+    0
+  );
   var commandNotificationsEnabled = false;
   var connectionStatus = STATUS_SEARCHING;
   var currentPreset = null;
@@ -355,14 +359,19 @@ class GoPro extends Ble.BleDelegate {
   var pairingDevice = null;
   var asleep = false;
   var hasBeenConnected = false;
-  const SIMULATION_MODE = true; // Set to true to enable simulation mode
+  const SIMULATION_MODE = false; // Set to true to enable simulation mode
 
   var commandQueue = [];
   var sendingCommand = false;
 
+  // Set this to true for build/dev, false for release
+  const DEBUG_LOG = false;
+
   // Unified logging method
   function log(str) {
-    System.println("[GoPro] " + str);
+    if (DEBUG_LOG) {
+      System.println("[GoPro] " + str);
+    }
   }
 
   function sendCommand(command, args) {
@@ -370,6 +379,15 @@ class GoPro extends Ble.BleDelegate {
       log("[SIM] sendCommand called, BLE logic skipped: " + command);
       // Optionally simulate command queueing/processing here if needed
     } else {
+      // Validate command and args
+      if (command == null) {
+        log("[ERROR] sendCommand called with null command");
+        return;
+      }
+      if (command == "PRESET_ID" && (args == null || args.size() != 4)) {
+        log("[ERROR] sendCommand PRESET_ID with invalid args: " + args);
+        return;
+      }
       // Enqueue the command
       commandQueue.add({ :command => command, :args => args });
       startSendingCommands();
@@ -384,27 +402,46 @@ class GoPro extends Ble.BleDelegate {
         var item = commandQueue[0];
         sendingCommand = true;
         // Actually send the command (original logic)
-        var cmdBytes = commands.get(item[:command]);
-        if (cmdBytes != null) {
-          var toSend = cmdBytes;
-          if (item[:args] != null) {
-            // If args are provided, append or merge as needed
-            toSend = cmdBytes + item[:args];
-          }
-          // Send over BLE
-          if (device != null) {
-            var service = device.getService(CONTROL_AND_QUERY_SERVICE);
-            if (service != null) {
-              var ch = service.getCharacteristic(COMMAND_CHAR);
-              if (ch != null) {
-                try {
-                  ch.requestWrite(toSend);
-                } catch (ex) {
-                  // On error, clear sending flag and try next
-                  sendingCommand = false;
-                  commandQueue = commandQueue.slice(1, null);
-                  startSendingCommands();
-                }
+        var cmdBytes = []b.addAll(commands.get(item[:command]));
+        if (cmdBytes == null) {
+          log(
+            "[ERROR] startSendingCommands: cmdBytes is null for command: " +
+              item[:command]
+          );
+          sendingCommand = false;
+          commandQueue = commandQueue.slice(1, null);
+          startSendingCommands();
+          return;
+        }
+        var toSend = cmdBytes;
+        if (item[:args] != null) {
+          // If args are provided, append or merge as needed
+          toSend = cmdBytes.addAll(item[:args]);
+        }
+        // Only send if toSend is a ByteArray
+        if (!(toSend instanceof ByteArray)) {
+          log("[ERROR] startSendingCommands: toSend is not a ByteArray");
+          sendingCommand = false;
+          commandQueue = commandQueue.slice(1, null);
+          startSendingCommands();
+          return;
+        }
+        // Send over BLE
+        if (device != null) {
+          var service = device.getService(CONTROL_AND_QUERY_SERVICE);
+          if (service != null) {
+            var ch = service.getCharacteristic(COMMAND_CHAR);
+            if (ch != null) {
+              try {
+                ch.requestWrite(toSend, {
+                  :writeType => Ble.WRITE_TYPE_DEFAULT,
+                });
+              } catch (ex) {
+                log("[ERROR] Exception in ch.requestWrite: " + ex);
+                // On error, clear sending flag and try next
+                sendingCommand = false;
+                commandQueue = commandQueue.slice(1, null);
+                startSendingCommands();
               }
             }
           }
@@ -440,8 +477,7 @@ class GoPro extends Ble.BleDelegate {
   function enableNotifications(characteristic) {
     if (SIMULATION_MODE) {
       log(
-        "[SIM] enableNotifications called, BLE logic skipped: " +
-          characteristic
+        "[SIM] enableNotifications called, BLE logic skipped: " + characteristic
       );
     } else {
       var service;
@@ -520,6 +556,18 @@ class GoPro extends Ble.BleDelegate {
             seenDevices.add(seenDevice);
             log(Lang.format("Seen Devices: $1$", [seenDevices]));
           }
+          // New: If cameraID is 0 or null, connect to first GoPro found
+          if (
+            (cameraID == null || cameraID == 0) &&
+            name != null &&
+            name.find("GoPro") != null &&
+            x.equals(CONTROL_AND_QUERY_SERVICE)
+          ) {
+            log("No cameraID set, connecting to first GoPro found: " + name);
+            connectionStatus = STATUS_CONNECTING;
+            connect(result);
+            return;
+          }
           if (
             pairingDevice == null &&
             x.equals(PAIR_SERVICE) &&
@@ -541,6 +589,7 @@ class GoPro extends Ble.BleDelegate {
             ) {
               if (
                 cameraID != null &&
+                cameraID != 0 &&
                 (name == null ||
                   name.equals("GoPro " + cameraID.format("%04d")))
               ) {
@@ -569,7 +618,8 @@ class GoPro extends Ble.BleDelegate {
         queryResponse = [245, 242]b;
         queryResponse = queryResponse.addAll(
           StringUtil.convertEncodedString(
-            "CrcCCOgHEiQICRAMGBUoATAVOgYIAhABGAE6BggDEAgYAToGCHkQAxgBQAASJggIEAwYFCABKAEwFDoGCAIQARgBOgYIAxAIGAE6Bgh5EAAYAUAAEiQIBxAMGBIoATASOgYIAhABGAE6BggDEAgYAToGCHkQAxgBQAASJAgGEAwYFCgBMBQ6BggCEAEYAToGCAMQCBgBOgYIeRAEGAFAABIkCAAQDBgBKAAwADoGCAIQCRgBOgYIAxAFGAE6Bgh5EAAYAUAAEiQIARAMGAAoADABOgYIAhABGAE6BggDEAgYAToGCHkQAhgBQAESJAgCEAwYAigAMAI6BggCEAEYAToGCAMQCBgBOgYIeRACGAFAARIkCAMQGxgLKAAwCjoGCAIQCRgBOgYIAxAAGAE6Bgh5EAAYAUAAGAEKfwjpBxIWCICABBARGAMoADADOgYIehBlGAFAARIfCIGABBAZGAQoADAEOgcIhQEQABgBOgYIeRAAGAFAABIfCIKABBATGAUoADAFOgcIkwEQBBgBOgYIexBlGAFAARIeCIOABBASGAYoADAGOgYIExAAGAE6Bgh6EGUYAUAAGAEKfgjqBxImCICACBAYGAcoADAHOgYIAhABGAE6BghvEAoYAToGCHkQCBgBQAESJgiBgAgQDRgIKAAwCDoGCAIQCRgBOgYIBRAAGAE6Bgh5EAAYAUAAEicIgoAIEBoYCSgAMAk6BggCEAkYAToHCCAQkRwYAToGCHkQABgBQAAYAQ==",
+            //"CrcCCOgHEiQICRAMGBUoATAVOgYIAhABGAE6BggDEAgYAToGCHkQAxgBQAASJggIEAwYFCABKAEwFDoGCAIQARgBOgYIAxAIGAE6Bgh5EAAYAUAAEiQIBxAMGBIoATASOgYIAhABGAE6BggDEAgYAToGCHkQAxgBQAASJAgGEAwYFCgBMBQ6BggCEAEYAToGCAMQCBgBOgYIeRAEGAFAABIkCAAQDBgBKAAwADoGCAIQCRgBOgYIAxAFGAE6Bgh5EAAYAUAAEiQIARAMGAAoADABOgYIAhABGAE6BggDEAgYAToGCHkQAhgBQAESJAgCEAwYAigAMAI6BggCEAEYAToGCAMQCBgBOgYIeRACGAFAARIkCAMQGxgLKAAwCjoGCAIQCRgBOgYIAxAAGAE6Bgh5EAAYAUAAGAEKfwjpBxIWCICABBARGAMoADADOgYIehBlGAFAARIfCIGABBAZGAQoADAEOgcIhQEQABgBOgYIeRAAGAFAABIfCIKABBATGAUoADAFOgcIkwEQBBgBOgYIexBlGAFAARIeCIOABBASGAYoADAGOgYIExAAGAE6Bgh6EGUYAUAAGAEKfgjqBxImCICACBAYGAcoADAHOgYIAhABGAE6BghvEAoYAToGCHkQCBgBQAESJgiBgAgQDRgIKAAwCDoGCAIQCRgBOgYIBRAAGAE6Bgh5EAAYAUAAEicIgoAIEBoYCSgAMAk6BggCEAkYAToHCCAQkRwYAToGCHkQABgBQAAYAQ==",
+            "CjcI6AcSLgiAgDwQDBg3KAAwNzoGCGwQABgBOgYIAhASGAE6BggDEAUYAToGCHkQBxgBQAEYACAFCicI6QcSHgiAgEAQEBg4KAAwODoGCH0QABgBOgYIehBkGAFAABgAIAYKqgEI6gcSJgiAgEQQGBg5KAAwOToGCAIQARgBOgYIbxAKGAE6Bgh5EAcYAUAAEicIgYBEEB0YWigAMFk6BggCEAEYAToHCCAQkRwYAToGCHkQABgBQAASJwiCgEQQHhhbKAAwWjoGCAIQARgBOgcIIBCRHBgBOgYIeRAAGAFAABInCIOARBAfGFwoADBbOgYIAhABGAE6BwggEJEcGAE6Bgh5EAAYAUAAGAAgBxIECBIQGRoECBIQGQ==",
             {
               :fromRepresentation => StringUtil.REPRESENTATION_STRING_BASE64,
               :toRepresentation => StringUtil.REPRESENTATION_BYTE_ARRAY,
@@ -585,7 +635,15 @@ class GoPro extends Ble.BleDelegate {
         (queryResponse[1] == RESPONSE_TYPE_PRESET ||
           queryResponse[1] == NOTIFICATION_TYPE_PRESET)
       ) {
+        // Log the raw queryResponse bytes for debugging (non-simulation only, as base64)
         presetGroups.data = queryResponse.slice(2, null);
+        if (!SIMULATION_MODE) {
+          var base64 = StringUtil.convertEncodedString(presetGroups.data, {
+            :fromRepresentation => StringUtil.REPRESENTATION_BYTE_ARRAY,
+            :toRepresentation => StringUtil.REPRESENTATION_STRING_BASE64,
+          });
+          log("[DEBUG] queryResponse (base64) for preset: " + base64);
+        }
         Application.Storage.setValue(
           "lastPresetGroupResult",
           StringUtil.convertEncodedString(presetGroups.data, {
@@ -869,9 +927,26 @@ class GoPro extends Ble.BleDelegate {
   }
 
   function onConnectedStateChanged(device, state) {
+    if (device == null || state == null) {
+      log("[ERROR] onConnectedStateChanged: Not enough arguments (device=" + device + ", state=" + state + ")");
+      return;
+    }
     if (device.getName() != null) {
       log("device connected: " + device.getName());
       log(device.getName() + " " + state);
+      // New: If cameraID is 0 or null, extract from device name and save
+      if (
+        (cameraID == null || cameraID == 0) &&
+        device.getName().find("GoPro ") == 0
+      ) {
+        var idStr = device.getName().substring(6); // after "GoPro "
+        var idNum = idStr.toNumber();
+        if (idNum != null && idNum > 0) {
+          cameraID = idNum;
+          Application.Properties.setValue("gopro_id", cameraID);
+          log("Saved detected cameraID: " + cameraID);
+        }
+      }
     }
     if (state == Ble.CONNECTION_STATE_CONNECTED) {
       asleep = false;
@@ -957,37 +1032,76 @@ class GoPro extends Ble.BleDelegate {
   }
 
   function formatSettings() {
+    var modeKey = mode.toNumber();
+    var presetMap = null;
+    var presetIndexes = null;
+    // Try to get presetMap and presetIndexes using [] notation for both maps and arrays
+    if (presetGroups != null && presetGroups.presets != null) {
+      if (presetGroups.presets[modeKey] != null) {
+        presetMap = presetGroups.presets[modeKey];
+      }
+    }
+    if (presetGroups != null && presetGroups.presetsIndexes != null) {
+      if (presetGroups.presetsIndexes[modeKey] != null) {
+        presetIndexes = presetGroups.presetsIndexes[modeKey];
+      }
+    }
+    // Fallback: if modeId is not present, use first available
     if (
-      presetGroups != null &&
-      presetGroups.presets.get(mode.toNumber()) != null &&
-      modeId != null
+      presetMap != null &&
+      (modeId == null || presetMap[modeId.toNumber()] == null)
     ) {
-      currentPreset = presetGroups.presets
-        .get(mode.toNumber())
-        .get(modeId.toNumber());
-      var presetIndex = presetGroups.presetsIndexes
-        .get(mode.toNumber())
-        .indexOf(modeId.toNumber());
-      if (presetIndex == 0) {
+      var keys = presetMap.keys != null ? presetMap.keys() : null;
+      if (keys != null && keys.size() > 0) {
+        modeId = keys[0];
+      }
+    }
+    // Now get the currentPreset
+    if (
+      presetMap != null &&
+      modeId != null &&
+      presetMap[modeId.toNumber()] != null
+    ) {
+      currentPreset = presetMap[modeId.toNumber()];
+      var presetIndex =
+        presetIndexes != null ? presetIndexes.indexOf(modeId.toNumber()) : -1;
+      var presetCount = presetIndexes != null ? presetIndexes.size() : 0;
+      if (presetCount <= 1) {
+        firstPreset = true;
+        lastPreset = true;
+      } else if (presetIndex == 0) {
         firstPreset = true;
         lastPreset = false;
-      } else if (
-        presetIndex ==
-        presetGroups.presetsIndexes.get(mode.toNumber()).size() - 1
-      ) {
+      } else if (presetIndex == presetCount - 1) {
+        firstPreset = false;
         lastPreset = true;
-        firstPreset = false;
       } else {
-        lastPreset = false;
         firstPreset = false;
+        lastPreset = false;
       }
       log(Lang.format("$1$,$2$", [presetIndex, mode]));
+    } else {
+      currentPreset = null;
+      firstPreset = true;
+      lastPreset = true;
     }
     if (currentPreset != null) {
-      flatModeId = currentPreset.get("flatMode").toNumber();
-      modeName = PRESET_TITLES_IDS.get(currentPreset.get("title"));
-      if (currentPreset.get("titleNumber") > 0) {
-        modeName = modeName + " " + currentPreset.get("titleNumber");
+      flatModeId = currentPreset.mode;
+      modeName = PRESET_TITLES_IDS.get(currentPreset.titleId);
+      if (modeName == null) {
+        // Fallback: use flat mode name if available
+        if (mode == GoPro.MODE_VIDEO) {
+          modeName = "Video";
+        } else if (mode == GoPro.MODE_PHOTO) {
+          modeName = "Photo";
+        } else if (mode == GoPro.MODE_TIMELAPSE) {
+          modeName = "Time Lapse";
+        } else {
+          modeName = "Unknown";
+        }
+      }
+      if (currentPreset.titleNumber > 0) {
+        modeName = modeName + " " + currentPreset.titleNumber;
       }
     }
     var lFov = null;

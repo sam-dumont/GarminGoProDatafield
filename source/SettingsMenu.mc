@@ -7,19 +7,6 @@ class SettingsMenu extends WatchUi.Menu2 {
   function initialize() {
     Menu2.initialize(null);
     Menu2.setTitle("Settings");
-
-    Menu2.addItem(
-      new WatchUi.ToggleMenuItem(
-        "Enable Debug",
-        null,
-        "debug",
-        Util.replaceNull(
-          Application.Properties.getValue("enable_debug"),
-          false
-        ),
-        null
-      )
-    );
   }
 }
 
@@ -29,16 +16,6 @@ class SettingsMenuDelegate extends WatchUi.Menu2InputDelegate {
   }
 
   function onSelect(item) {
-    var id = item.getId();
-    if (id.equals("debug")) {
-      Application.Properties.setValue(
-        "enable_debug",
-        !Util.replaceNull(
-          Application.Properties.getValue("enable_debug"),
-          false
-        )
-      );
-    }
   }
 
   function onBack() {

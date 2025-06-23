@@ -28,10 +28,6 @@ class MainView extends WatchUi.DataField {
     layout = new Layout(0);
     self.gopro = gopro;
     self.screenCoordinates = screenCoordinates;
-    enableDebug = Util.replaceNull(
-      Application.Properties.getValue("enable_debug"),
-      false
-    );
     keepalive = Util.replaceNull(
       Application.Properties.getValue("keepalive"),
       false
@@ -115,6 +111,27 @@ class MainView extends WatchUi.DataField {
     var height = dc.getHeight();
     var width = dc.getWidth();
 
+    // Force connected state in simulation mode for UI testing
+    if (gopro.SIMULATION_MODE) {
+      gopro.connectionStatus = GoPro.STATUS_CONNECTED;
+      if (gopro.cameraID == null || gopro.cameraID == 0) {
+        gopro.cameraID = 1;
+      }
+      gopro.hasBeenConnected = true;
+      // Remove fake preset injection: rely on real presetGroups
+      // Fallback: if modeId is missing in video mode, use first available
+      if (gopro.presetGroups != null && gopro.presetGroups.presets != null) {
+        var videoPresets = gopro.presetGroups.presets[GoPro.MODE_VIDEO];
+        if (videoPresets != null && videoPresets[gopro.modeId] == null) {
+          // Use first available preset in video mode
+          var keys = videoPresets.keys();
+          if (keys.size() > 0) {
+            gopro.modeId = keys[0];
+          }
+        }
+      }
+    }
+
     if (!shouldConnect) {
       layout.setLayout(dc, -1);
       dc.setColor(foregroundColor, foregroundColor);
@@ -151,7 +168,12 @@ class MainView extends WatchUi.DataField {
               gopro.foundCameraIDs,
             ]);
           }
-          layout.durationText.setText(cameraPrompt);
+          // In simulation mode, skip the prompt and force connected UI
+          if (gopro.SIMULATION_MODE) {
+            gopro.connectionStatus = GoPro.STATUS_CONNECTED;
+          } else {
+            layout.durationText.setText(cameraPrompt);
+          }
         } else {
           layout.durationText.setText(
             Lang.format("SEARCHING FOR GOPRO $1$", [
@@ -176,9 +198,7 @@ class MainView extends WatchUi.DataField {
       gopro.formatSettings();
 
       layout.modeText.setColor(foregroundColor);
-      var modeText = gopro.modeName;
-      // Remove debug log display in modeText
-      layout.modeText.setText(modeText);
+      layout.modeText.setText(gopro.modeName);
 
       layout.settingsText.setText(gopro.settings);
       layout.settingsText.setColor(foregroundColor);
@@ -277,16 +297,20 @@ class MainView extends WatchUi.DataField {
             : Application.loadResource($.Rez.Drawables.black_record);
       }
 
-      dc.drawBitmap(
-        width * 0.25 - modeIcon.getWidth() / 2,
-        height * 0.75,
-        modeIcon
-      );
-      dc.drawBitmap(
-        width * 0.75 - statusIcon.getWidth() / 2,
-        height * 0.75,
-        statusIcon
-      );
+      if (modeIcon != null) {
+        dc.drawBitmap(
+          width * 0.25 - modeIcon.getWidth() / 2,
+          height * 0.75,
+          modeIcon
+        );
+      }
+      if (statusIcon != null) {
+        dc.drawBitmap(
+          width * 0.75 - statusIcon.getWidth() / 2,
+          height * 0.75,
+          statusIcon
+        );
+      }
 
       screenCoordinates.modeButton = [
         [
@@ -348,12 +372,13 @@ class MainView extends WatchUi.DataField {
       }
 
       if (gopro.hasBeenConnected) {
-        dc.drawBitmap(
-          width * 0.5 - onOffIcon.getWidth() / 2,
-          height * 0.02,
-          onOffIcon
-        );
-
+        if (onOffIcon != null) {
+          dc.drawBitmap(
+            width * 0.5 - onOffIcon.getWidth() / 2,
+            height * 0.02,
+            onOffIcon
+          );
+        }
         screenCoordinates.onOffButton = [
           [
             width * 0.5 - onOffIcon.getWidth() / 2,
@@ -383,9 +408,5 @@ class MainView extends WatchUi.DataField {
   }
 
   function handleSettingsChanged() {
-    enableDebug = Util.replaceNull(
-      Application.Properties.getValue("enable_debug"),
-      false
-    );
   }
 }
