@@ -359,13 +359,13 @@ class GoPro extends Ble.BleDelegate {
   var pairingDevice = null;
   var asleep = false;
   var hasBeenConnected = false;
-  const SIMULATION_MODE = true; // Set to true to enable simulation mode
+  const SIMULATION_MODE = false; // Set to true to enable simulation mode
 
   var commandQueue = [];
   var sendingCommand = false;
 
   // Set this to true for build/dev, false for release
-  const DEBUG_LOG = true;
+  const DEBUG_LOG = false;
 
   // Unified logging method
   function log(str) {
