@@ -6,28 +6,41 @@ using Toybox.BluetoothLowEnergy as Ble;
 import Toybox.System;
 
 class MainView extends WatchUi.DataField {
-  hidden var layout as Layout;
-  hidden var narrowDc;
-  hidden var shortDc;
-  hidden var backgroundColor;
-  hidden var foregroundColor;
-  hidden var screenCoordinates;
-  hidden var tick = 0;
-  hidden var enableDebug = false;
+  var layout as Layout;
+  var narrowDc;
+  var shortDc;
+  var backgroundColor;
+  var foregroundColor;
+  var screenCoordinates;
+  var tick = 0;
+  var tapTick = 0;
+  var enableDebug = false;
   var gopro;
-  hidden var altitude = 0;
-  hidden var shouldConnect = false;
+  var altitude = 0;
+  var shouldConnect = false;
+  var drawTap = false;
+  var tapCoordinates = [0, 0];
+  var keepalive = false;
+  var autoStop = false;
 
   function initialize(gopro as Ble.BleDelegate, screenCoordinates) {
     DataField.initialize();
     layout = new Layout(0);
     self.gopro = gopro;
     self.screenCoordinates = screenCoordinates;
-    enableDebug = Util.replaceNull(
-      Application.Properties.getValue("enable_debug"),
+    keepalive = Util.replaceNull(
+      Application.Properties.getValue("keepalive"),
+      false
+    );
+    autoStop = Util.replaceNull(
+      Application.Properties.getValue("auto_stop"),
       false
     );
     gopro.parseQueryResponse();
+  }
+
+  function onHide() {
+    DataField.onHide();
   }
 
   function onLayout(dc as Dc) as Void {
@@ -36,7 +49,11 @@ class MainView extends WatchUi.DataField {
     shortDc = dc.getHeight() < System.getDeviceSettings().screenHeight / 2.5;
   }
 
-  function onTimerStart() {}
+  function onTimerStart() {
+    if (autoStop && !gopro.recording && gopro.mode != GoPro.MODE_PHOTO) {
+      gopro.sendCommand("SHUTTER_ON", null);
+    }
+  }
 
   function onTimerResume() {
     gopro.open();
@@ -47,21 +64,38 @@ class MainView extends WatchUi.DataField {
   }
 
   function onTimerStop() {
+    if (autoStop && gopro.recording && gopro.mode != GoPro.MODE_PHOTO) {
+      gopro.sendCommand("SHUTTER_OFF", null);
+    }
     gopro.close();
   }
 
   function onTimerPause() {
+    if (autoStop && gopro.recording && gopro.mode != GoPro.MODE_PHOTO) {
+      gopro.sendCommand("SHUTTER_OFF", null);
+    }
     gopro.close();
+  }
+
+  function setTapCoordinates(coordinates) {
+    drawTap = true;
+    tapCoordinates = coordinates;
+    tapTick = tick;
   }
 
   function compute(info as Activity.Info) as Void {
     shouldConnect = gopro.shouldConnect;
     gopro.accumulateQueryResponses();
+    gopro.accumulateCommandResponses();
     if (gopro.presetGroups != null) {
       gopro.presetGroups.parse();
     }
     tick = (tick + 1) % 15;
-    if (gopro.connectionStatus == GoPro.STATUS_CONNECTED && tick == 0) {
+    if (
+      gopro.connectionStatus == GoPro.STATUS_CONNECTED &&
+      tick == 0 &&
+      keepalive
+    ) {
       gopro.keepalive();
     }
     if (gopro.recording) {
@@ -71,13 +105,32 @@ class MainView extends WatchUi.DataField {
     }
   }
 
-  // Display the value you computed here. This will be called
-  // once a second when the data field is visible.
   function onUpdate(dc as Dc) as Void {
     backgroundColor = DataField.getBackgroundColor();
     foregroundColor = backgroundColor == 16777215 ? 0 : 16777215; //BLACK // WHITE
     var height = dc.getHeight();
     var width = dc.getWidth();
+
+    // Force connected state in simulation mode for UI testing
+    if (gopro.SIMULATION_MODE) {
+      gopro.connectionStatus = GoPro.STATUS_CONNECTED;
+      if (gopro.cameraID == null || gopro.cameraID == 0) {
+        gopro.cameraID = 1;
+      }
+      gopro.hasBeenConnected = true;
+      // Remove fake preset injection: rely on real presetGroups
+      // Fallback: if modeId is missing in video mode, use first available
+      if (gopro.presetGroups != null && gopro.presetGroups.presets != null) {
+        var videoPresets = gopro.presetGroups.presets[GoPro.MODE_VIDEO];
+        if (videoPresets != null && videoPresets[gopro.modeId] == null) {
+          // Use first available preset in video mode
+          var keys = videoPresets.keys();
+          if (keys.size() > 0) {
+            gopro.modeId = keys[0];
+          }
+        }
+      }
+    }
 
     if (!shouldConnect) {
       layout.setLayout(dc, -1);
@@ -86,8 +139,12 @@ class MainView extends WatchUi.DataField {
       dc.setColor(foregroundColor, backgroundColor);
       layout.durationText.setColor(backgroundColor);
       layout.durationText.setBackgroundColor(foregroundColor);
+      var connectText = gopro.asleep ? "RECONNECT" : "CONNECT";
       layout.durationText.setText(
-        Lang.format("CONNECT TO GOPRO ", [gopro.cameraID])
+        Lang.format("$1$ TO GOPRO $2$", [
+          connectText,
+          gopro.cameraID.format("%04d"),
+        ])
       );
       screenCoordinates.connectButton = [
         [width * 0.2, width * 0.8],
@@ -96,25 +153,43 @@ class MainView extends WatchUi.DataField {
     } else if (gopro.connectionStatus != GoPro.STATUS_CONNECTED) {
       layout.setLayout(dc, 0);
       layout.durationText.setColor(foregroundColor);
-      if (gopro.connectionStatus == GoPro.STATUS_SEARCHING) {
+      if (gopro.asleep) {
         layout.durationText.setText(
-          Lang.format("SEARCHING FOR GOPRO $1$", [gopro.cameraID])
+          Lang.format("GOPRO WITH ID $1$ IS ASLEEP", [
+            gopro.cameraID.format("%04d"),
+          ])
         );
+      } else if (gopro.connectionStatus == GoPro.STATUS_SEARCHING) {
+        if (gopro.cameraID == 0) {
+          var cameraPrompt = "PLEASE SET THE CAMERA ID IN CONNECT IQ SETTINGS.";
+          if (gopro.foundCameraIDs.size() > 0) {
+            cameraPrompt = Lang.format("$1$\nFOUND IDS: $2$", [
+              cameraPrompt,
+              gopro.foundCameraIDs,
+            ]);
+          }
+          // In simulation mode, skip the prompt and force connected UI
+          if (gopro.SIMULATION_MODE) {
+            gopro.connectionStatus = GoPro.STATUS_CONNECTED;
+          } else {
+            layout.durationText.setText(cameraPrompt);
+          }
+        } else {
+          layout.durationText.setText(
+            Lang.format("SEARCHING FOR GOPRO $1$", [
+              gopro.cameraID.format("%04d"),
+            ])
+          );
+        }
       } else {
         layout.durationText.setText(
-          Lang.format("CONNECTING TO GOPRO $1$", [gopro.cameraID])
+          Lang.format("CONNECTING TO GOPRO $1$", [
+            gopro.cameraID.format("%04d"),
+          ])
         );
       }
       layout.remainingText.setColor(foregroundColor);
-      layout.remainingText.setText(
-        enableDebug
-          ? Lang.format("$1$\n$2$\n$3$", [
-              gopro.logs[0],
-              gopro.logs[1],
-              gopro.logs[2],
-            ])
-          : ""
-      );
+      layout.remainingText.setText(""); // Remove log display
     } else {
       layout.setLayout(dc, 1);
 
@@ -123,15 +198,7 @@ class MainView extends WatchUi.DataField {
       gopro.formatSettings();
 
       layout.modeText.setColor(foregroundColor);
-      var modeText = gopro.modeName;
-      if (enableDebug) {
-        modeText = Lang.format("$2$\n$3$\n$4$", [
-          gopro.logs[0],
-          gopro.logs[1],
-          gopro.logs[2],
-        ]);
-      }
-      layout.modeText.setText(modeText);
+      layout.modeText.setText(gopro.modeName);
 
       layout.settingsText.setText(gopro.settings);
       layout.settingsText.setColor(foregroundColor);
@@ -144,25 +211,25 @@ class MainView extends WatchUi.DataField {
       } else {
         layout.durationText.setVisible(true);
         layout.durationText.setText(
-          Util.format_duration(gopro.recordingDuration)
+          Util.format_duration(gopro.recordingDuration, false)
         );
         if (gopro.recording) {
           dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
           dc.fillCircle(
-            dc.getWidth() * 0.15,
+            dc.getWidth() * 0.2,
             dc.getHeight() * 0.325,
             dc.getHeight() * 0.0875
           );
           dc.fillCircle(
-            dc.getWidth() * 0.85,
+            dc.getWidth() * 0.8,
             dc.getHeight() * 0.325,
             dc.getHeight() * 0.0875
           );
           dc.fillRectangle(
-            dc.getWidth() * 0.15,
+            dc.getWidth() * 0.2,
             dc.getHeight() * 0.2375,
-            dc.getWidth() * 0.7,
-            dc.getHeight() * 0.176
+            dc.getWidth() * 0.6,
+            dc.getHeight() * 0.178
           );
           layout.durationText.setColor(Graphics.COLOR_WHITE);
           dc.setColor(foregroundColor, backgroundColor);
@@ -186,7 +253,10 @@ class MainView extends WatchUi.DataField {
           }
         }
         layout.remainingText.setText(
-          Util.format_duration(gopro.remainingTime - gopro.remainingTimeDelta)
+          Util.format_duration(
+            gopro.remainingTime - gopro.remainingTimeDelta,
+            true
+          )
         );
         layout.remainingText.setColor(foregroundColor);
       } else if (gopro.mode == GoPro.MODE_TIMELAPSE) {
@@ -198,7 +268,7 @@ class MainView extends WatchUi.DataField {
           modeIcon = Application.loadResource($.Rez.Drawables.black_timelapse);
         }
         layout.remainingText.setText(
-          Util.format_duration(gopro.remainingTimelapse)
+          Util.format_duration(gopro.remainingTimelapse, true)
         );
         layout.remainingText.setColor(foregroundColor);
       } else if (gopro.mode == GoPro.MODE_PHOTO) {
@@ -227,16 +297,20 @@ class MainView extends WatchUi.DataField {
             : Application.loadResource($.Rez.Drawables.black_record);
       }
 
-      dc.drawBitmap(
-        width * 0.25 - modeIcon.getWidth() / 2,
-        height * 0.75,
-        modeIcon
-      );
-      dc.drawBitmap(
-        width * 0.75 - statusIcon.getWidth() / 2,
-        height * 0.75,
-        statusIcon
-      );
+      if (modeIcon != null) {
+        dc.drawBitmap(
+          width * 0.25 - modeIcon.getWidth() / 2,
+          height * 0.75,
+          modeIcon
+        );
+      }
+      if (statusIcon != null) {
+        dc.drawBitmap(
+          width * 0.75 - statusIcon.getWidth() / 2,
+          height * 0.75,
+          statusIcon
+        );
+      }
 
       screenCoordinates.modeButton = [
         [
@@ -253,14 +327,86 @@ class MainView extends WatchUi.DataField {
         ],
         [height * 0.75, height * 0.75 + statusIcon.getHeight()],
       ];
+
+      if (!gopro.recording) {
+        if (!gopro.firstPreset) {
+          screenCoordinates.prevPresetButton = [
+            [width * 0.02, width * 0.13],
+            [height * 0.47, height * 0.58],
+          ];
+
+          dc.fillPolygon([
+            [width * 0.1, height * 0.5],
+            [width * 0.1, height * 0.55],
+            [width * 0.05, height * 0.525],
+          ]);
+        } else {
+          screenCoordinates.prevPresetButton = [
+            [0, 0],
+            [0, 0],
+          ];
+        }
+        if (!gopro.lastPreset) {
+          screenCoordinates.nextPresetButton = [
+            [width * 0.87, width * 0.98],
+            [height * 0.47, height * 0.58],
+          ];
+          dc.fillPolygon([
+            [width * 0.9, height * 0.5],
+            [width * 0.9, height * 0.55],
+            [width * 0.95, height * 0.525],
+          ]);
+        }
+      } else {
+        screenCoordinates.nextPresetButton = [
+          [0, 0],
+          [0, 0],
+        ];
+      }
+
+      var onOffIcon = null;
+      if (gopro.asleep) {
+        onOffIcon = Application.loadResource($.Rez.Drawables.on);
+      } else {
+        onOffIcon = Application.loadResource($.Rez.Drawables.off);
+      }
+
+      if (gopro.hasBeenConnected) {
+        if (onOffIcon != null) {
+          dc.drawBitmap(
+            width * 0.5 - onOffIcon.getWidth() / 2,
+            height * 0.02,
+            onOffIcon
+          );
+        }
+        screenCoordinates.onOffButton = [
+          [
+            width * 0.5 - onOffIcon.getWidth() / 2,
+            width * 0.5 + onOffIcon.getWidth() / 2,
+          ],
+          [height * 0.02, height * 0.02 + onOffIcon.getHeight()],
+        ];
+      } else {
+        screenCoordinates.onOffButton = [
+          [0, 0],
+          [0, 0],
+        ];
+      }
     }
     layout.draw(dc);
+    if (drawTap) {
+      if (tick - tapTick > 0) {
+        drawTap = false;
+      }
+      dc.setPenWidth(3);
+      dc.setColor(backgroundColor, foregroundColor);
+      dc.fillCircle(tapCoordinates[0], tapCoordinates[1], dc.getWidth() * 0.07);
+      dc.setColor(foregroundColor, backgroundColor);
+      dc.drawCircle(tapCoordinates[0], tapCoordinates[1], dc.getWidth() * 0.02);
+      dc.drawCircle(tapCoordinates[0], tapCoordinates[1], dc.getWidth() * 0.07);
+    }
   }
 
   function handleSettingsChanged() {
-    enableDebug = Util.replaceNull(
-      Application.Properties.getValue("enable_debug"),
-      false
-    );
   }
 }

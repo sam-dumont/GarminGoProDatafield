@@ -1,0 +1,44 @@
+# Diff: Removal of ANT+ logic from GarminGoProDatafield.mc
+
+--- BEFORE (with ANT+ logic)
+
+import Toybox.Ant;
+...
+var antRemoteControl = null;
+...
+function logAntRemote(msg) {
+  System.println("[ANT+ Remote] " + msg);
+}
+...
+function onStop(state as Dictionary?) as Void {
+  if (gopro != null && gopro.device != null) {
+    gopro.close();
+  }
+  if (antRemoteControl != null) {
+    antRemoteControl.close();
+  }
+  gopro = null;
+  screenCoordinates = null;
+  AppBase.onStop(state);
+}
+...
+
+--- AFTER (ANT+ logic removed)
+
+// import Toybox.Ant; (removed)
+...
+// var antRemoteControl = null; (removed)
+...
+// function logAntRemote(msg) { ... } (removed)
+...
+function onStop(state as Dictionary?) as Void {
+  if (gopro != null && gopro.device != null) {
+    gopro.close();
+  }
+  gopro = null;
+  screenCoordinates = null;
+  AppBase.onStop(state);
+}
+...
+
+All ANT+ references, variables, and related logic have been removed from GarminGoProDatafield.mc.

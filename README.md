@@ -1,6 +1,6 @@
 # GarminGoProWidget
 
-This datafield allows Garmin Edge users to control their GoPro camera directly from an activity.
+This datafield allows Garmin Edge users to control their GoPro camera (versions 8 and above) directly from an activity.
 
 It is currently only supporting Edge 840 and 1040, because they are the only devices allowing touch interactions and System7 features.
 

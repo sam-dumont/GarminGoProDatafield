@@ -5,3 +5,4 @@ bin/*.debug.xml
 bin/
 python/
 key_path
+settings_secrets.xml

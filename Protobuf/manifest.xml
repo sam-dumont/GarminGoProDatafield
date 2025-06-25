@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<iq:manifest version="3" xmlns:iq="http://www.garmin.com/xml/connectiq">
+    <iq:barrel id="34aa6ee6-5b93-477d-b18a-a59094a21173" module="Protobuf" version="0.1.0" minSdkVersion="3.0.0">
+        <iq:products/>
+        <iq:permissions/>
+        <iq:languages/>
+        <iq:barrels/>
+        <iq:annotations/>
+    </iq:barrel>
+</iq:manifest>

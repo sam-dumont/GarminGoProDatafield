@@ -1,0 +1,5 @@
+# Do not hand edit this file. To make changes run the
+# "Configure Monkey Barrels" command.
+
+Protobuf = [/Users/sam/Code/perso/GarminGoProWidget/Protobuf/monkey.jungle]
+base.barrelPath = $(base.barrelPath);$(Protobuf)
