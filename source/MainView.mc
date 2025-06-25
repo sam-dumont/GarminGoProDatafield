@@ -205,39 +205,6 @@ class MainView extends WatchUi.DataField {
 
       var modeIcon;
       var statusIcon;
-
-      if (gopro.mode == GoPro.MODE_PHOTO) {
-        layout.durationText.setVisible(false);
-      } else {
-        layout.durationText.setVisible(true);
-        layout.durationText.setText(
-          Util.format_duration(gopro.recordingDuration, false)
-        );
-        if (gopro.recording) {
-          dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
-          dc.fillCircle(
-            dc.getWidth() * 0.2,
-            dc.getHeight() * 0.325,
-            dc.getHeight() * 0.0875
-          );
-          dc.fillCircle(
-            dc.getWidth() * 0.8,
-            dc.getHeight() * 0.325,
-            dc.getHeight() * 0.0875
-          );
-          dc.fillRectangle(
-            dc.getWidth() * 0.2,
-            dc.getHeight() * 0.2375,
-            dc.getWidth() * 0.6,
-            dc.getHeight() * 0.178
-          );
-          layout.durationText.setColor(Graphics.COLOR_WHITE);
-          dc.setColor(foregroundColor, backgroundColor);
-        } else {
-          layout.durationText.setColor(foregroundColor);
-        }
-      }
-
       if (gopro.mode == GoPro.MODE_VIDEO) {
         if (gopro.recording) {
           if (backgroundColor == Graphics.COLOR_BLACK) {
@@ -284,7 +251,6 @@ class MainView extends WatchUi.DataField {
         );
         layout.remainingText.setColor(foregroundColor);
       }
-
       if (gopro.recording) {
         statusIcon =
           backgroundColor == Graphics.COLOR_BLACK
@@ -296,40 +262,10 @@ class MainView extends WatchUi.DataField {
             ? Application.loadResource($.Rez.Drawables.white_record)
             : Application.loadResource($.Rez.Drawables.black_record);
       }
-
-      if (modeIcon != null) {
-        dc.drawBitmap(
-          width * 0.25 - modeIcon.getWidth() / 2,
-          height * 0.75,
-          modeIcon
-        );
-      }
-      if (statusIcon != null) {
-        dc.drawBitmap(
-          width * 0.75 - statusIcon.getWidth() / 2,
-          height * 0.75,
-          statusIcon
-        );
-      }
-
-      screenCoordinates.modeButton = [
-        [
-          width * 0.25 - modeIcon.getWidth() / 2,
-          width * 0.25 + modeIcon.getWidth() / 2,
-        ],
-        [height * 0.75, height * 0.75 + modeIcon.getHeight()],
-      ];
-
-      screenCoordinates.recordButton = [
-        [
-          width * 0.75 - statusIcon.getWidth() / 2,
-          width * 0.75 + statusIcon.getWidth() / 2,
-        ],
-        [height * 0.75, height * 0.75 + statusIcon.getHeight()],
-      ];
+      self.drawDeviceSpecificUI(dc, width, height, gopro, screenCoordinates, modeIcon, statusIcon);
 
       if (!gopro.recording) {
-        if (!gopro.firstPreset) {
+        if (!gopro.firstPreset || gopro.SIMULATION_MODE) {
           screenCoordinates.prevPresetButton = [
             [width * 0.02, width * 0.13],
             [height * 0.47, height * 0.58],
@@ -346,7 +282,7 @@ class MainView extends WatchUi.DataField {
             [0, 0],
           ];
         }
-        if (!gopro.lastPreset) {
+        if (!gopro.lastPreset || gopro.SIMULATION_MODE) {
           screenCoordinates.nextPresetButton = [
             [width * 0.87, width * 0.98],
             [height * 0.47, height * 0.58],
@@ -408,5 +344,191 @@ class MainView extends WatchUi.DataField {
   }
 
   function handleSettingsChanged() {
+  }
+
+  (:square)
+  function drawDeviceSpecificUI(dc, width, height, gopro, screenCoordinates, modeIcon, statusIcon) {
+    if (modeIcon != null) {
+      dc.drawBitmap(
+        width * 0.25 - modeIcon.getWidth() / 2,
+        height * 0.75,
+        modeIcon
+      );
+    }
+    if (statusIcon != null) {
+      dc.drawBitmap(
+        width * 0.75 - statusIcon.getWidth() / 2,
+        height * 0.75,
+        statusIcon
+      );
+    }
+    screenCoordinates.modeButton = [
+      [
+        width * 0.25 - modeIcon.getWidth() / 2,
+        width * 0.25 + modeIcon.getWidth() / 2,
+      ],
+      [height * 0.75, height * 0.75 + modeIcon.getHeight()],
+    ];
+    screenCoordinates.recordButton = [
+      [
+        width * 0.75 - statusIcon.getWidth() / 2,
+        width * 0.75 + statusIcon.getWidth() / 2,
+      ],
+      [height * 0.75, height * 0.75 + statusIcon.getHeight()],
+    ];
+    if (!gopro.recording) {
+      if (!gopro.firstPreset) {
+        screenCoordinates.prevPresetButton = [
+          [width * 0.02, width * 0.13],
+          [height * 0.47, height * 0.58],
+        ];
+        dc.fillPolygon([
+          [width * 0.1, height * 0.5],
+          [width * 0.1, height * 0.55],
+          [width * 0.05, height * 0.525],
+        ]);
+      } else {
+        screenCoordinates.prevPresetButton = [
+          [0, 0],
+          [0, 0],
+        ];
+      }
+      if (!gopro.lastPreset) {
+        screenCoordinates.nextPresetButton = [
+          [width * 0.87, width * 0.98],
+          [height * 0.47, height * 0.58],
+        ];
+        dc.fillPolygon([
+          [width * 0.9, height * 0.5],
+          [width * 0.9, height * 0.55],
+          [width * 0.95, height * 0.525],
+        ]);
+      }
+    } else {
+      screenCoordinates.nextPresetButton = [
+        [0, 0],
+        [0, 0],
+      ];
+    }
+    var onOffIcon = null;
+    if (gopro.asleep) {
+      onOffIcon = Application.loadResource($.Rez.Drawables.on);
+    } else {
+      onOffIcon = Application.loadResource($.Rez.Drawables.off);
+    }
+    if (gopro.hasBeenConnected) {
+      if (onOffIcon != null) {
+        dc.drawBitmap(
+          width * 0.5 - onOffIcon.getWidth() / 2,
+          height * 0.02,
+          onOffIcon
+        );
+      }
+      screenCoordinates.onOffButton = [
+        [
+          width * 0.5 - onOffIcon.getWidth() / 2,
+          width * 0.5 + onOffIcon.getWidth() / 2,
+        ],
+        [height * 0.02, height * 0.02 + onOffIcon.getHeight()],
+      ];
+    } else {
+      screenCoordinates.onOffButton = [
+        [0, 0],
+        [0, 0],
+      ];
+    }
+  }
+
+  (:round)
+  function drawDeviceSpecificUI(dc, width, height, gopro, screenCoordinates, modeIcon, statusIcon) {
+    if (modeIcon != null) {
+      dc.drawBitmap(
+        width * 0.35 - modeIcon.getWidth() / 2,
+        height * 0.73,
+        modeIcon
+      );
+    }
+    if (statusIcon != null) {
+      dc.drawBitmap(
+        width * 0.65 - statusIcon.getWidth() / 2,
+        height * 0.73,
+        statusIcon
+      );
+    }
+    screenCoordinates.modeButton = [
+      [
+        width * 0.35 - modeIcon.getWidth() / 2,
+        width * 0.35 + modeIcon.getWidth() / 2,
+      ],
+      [height * 0.73, height * 0.73 + modeIcon.getHeight()],
+    ];
+    screenCoordinates.recordButton = [
+      [
+        width * 0.65 - statusIcon.getWidth() / 2,
+        width * 0.65 + statusIcon.getWidth() / 2,
+      ],
+      [height * 0.73, height * 0.73 + statusIcon.getHeight()],
+    ];
+    if (!gopro.recording) {
+      if (!gopro.firstPreset) {
+        screenCoordinates.prevPresetButton = [
+          [width * 0.02, width * 0.13],
+          [height * 0.47, height * 0.58],
+        ];
+        dc.fillPolygon([
+          [width * 0.1, height * 0.5],
+          [width * 0.1, height * 0.55],
+          [width * 0.05, height * 0.525],
+        ]);
+      } else {
+        screenCoordinates.prevPresetButton = [
+          [0, 0],
+          [0, 0],
+        ];
+      }
+      if (!gopro.lastPreset) {
+        screenCoordinates.nextPresetButton = [
+          [width * 0.87, width * 0.98],
+          [height * 0.47, height * 0.58],
+        ];
+        dc.fillPolygon([
+          [width * 0.9, height * 0.5],
+          [width * 0.9, height * 0.55],
+          [width * 0.95, height * 0.525],
+        ]);
+      }
+    } else {
+      screenCoordinates.nextPresetButton = [
+        [0, 0],
+        [0, 0],
+      ];
+    }
+    var onOffIcon = null;
+    if (gopro.asleep) {
+      onOffIcon = Application.loadResource($.Rez.Drawables.on);
+    } else {
+      onOffIcon = Application.loadResource($.Rez.Drawables.off);
+    }
+    if (gopro.hasBeenConnected) {
+      if (onOffIcon != null) {
+        dc.drawBitmap(
+          width * 0.5 - onOffIcon.getWidth() / 2,
+          height * 0.02,
+          onOffIcon
+        );
+      }
+      screenCoordinates.onOffButton = [
+        [
+          width * 0.5 - onOffIcon.getWidth() / 2,
+          width * 0.5 + onOffIcon.getWidth() / 2,
+        ],
+        [height * 0.02, height * 0.02 + onOffIcon.getHeight()],
+      ];
+    } else {
+      screenCoordinates.onOffButton = [
+        [0, 0],
+        [0, 0],
+      ];
+    }
   }
 }
