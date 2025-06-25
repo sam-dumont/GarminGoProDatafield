@@ -2,7 +2,7 @@ using Toybox.WatchUi;
 import Toybox.System;
 import Toybox.Lang;
 
-class RecordingDelegate extends WatchUi.BehaviorDelegate {
+class RecordingDelegate extends WatchUi.InputDelegate {
   var screenCoordinates;
   var gopro;
   var mainView;

@@ -56,26 +56,8 @@ class GarminGoProDatafieldApp extends Application.AppBase {
     );
   }
 
-  function onBackgroundData(dataIn as PersistableType) {
-    var data = dataIn as Dictionary;
-    System.println(data);
-    if (data["responseCode"] == 200) {
-      if (data["types"].indexOf("profiles") != -1) {
-        Application.Storage.setValue("lastPresetGroupUploaded", true);
-      }
-    }
-  }
-
   function onSettingsChanged() {
     $.mainView.handleSettingsChanged();
     WatchUi.requestUpdate();
-  }
-
-  function getServiceDelegate() {
-    return [new BgServiceDelegate()];
-  }
-
-  function getSettingsView() {
-    return [new SettingsMenu(), new SettingsMenuDelegate()];
   }
 }
