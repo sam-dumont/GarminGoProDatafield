@@ -2,7 +2,9 @@
 
 This datafield allows Garmin Edge users to control their GoPro camera (versions 8 and above) directly from an activity.
 
-It is currently only supporting Edge 840 and 1040, because they are the only devices allowing touch interactions and System7 features.
+It is currently only supporting Edge 840, 1040, 1050 and Explore 2, because they are the only devices allowing touch interactions and System7 features.
+
+I am currently experimenting with Edge Remote to see if it could be used to control the camera. Stay tuned.
 
 ### Icons licenses
 
