@@ -3,4 +3,5 @@
     <string id="gopro_id">GoPro Camera ID</string>
     <string id="keepalive">Keep the GoPro on at all time ?</string>
     <string id="auto_stop">Start/stop recording when activity starts/stops ?</string>
+    <string id="auto_reconnect">Reconnect to GoPro when connection is lost ?</string>
 </strings>

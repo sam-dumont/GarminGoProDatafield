@@ -359,6 +359,7 @@ class GoPro extends Ble.BleDelegate {
   var pairingDevice = null;
   var asleep = false;
   var hasBeenConnected = false;
+  var autoReconnect = Util.replaceNull(Application.Properties.getValue("auto_reconnect"), false);
   const SIMULATION_MODE = true; // Set to true to enable simulation mode
 
   var commandQueue = [];
@@ -955,6 +956,12 @@ class GoPro extends Ble.BleDelegate {
       hasBeenConnected = true;
     } else {
       close();
+      // Auto-reconnect logic if enabled and not asleep
+      if (autoReconnect && !asleep) {
+        log("Auto-reconnect enabled, attempting to reconnect...");
+        shouldConnect = true;
+        open();
+      }
     }
   }
 
