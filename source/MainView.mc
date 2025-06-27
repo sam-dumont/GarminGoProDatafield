@@ -22,6 +22,8 @@ class MainView extends WatchUi.DataField {
   var tapCoordinates = [0, 0];
   var keepalive = false;
   var autoStop = false;
+  var isSmallLayout = false;
+  var reducedViewTick = 0;
 
   function initialize(gopro as Ble.BleDelegate, screenCoordinates) {
     DataField.initialize();
@@ -37,6 +39,10 @@ class MainView extends WatchUi.DataField {
       false
     );
     gopro.parseQueryResponse();
+  }
+
+  function onPeriodicUpdate() {
+    WatchUi.requestUpdate();
   }
 
   function onHide() {
@@ -106,10 +112,17 @@ class MainView extends WatchUi.DataField {
   }
 
   function onUpdate(dc as Dc) as Void {
-    backgroundColor = DataField.getBackgroundColor();
-    foregroundColor = backgroundColor == 16777215 ? 0 : 16777215; //BLACK // WHITE
     var height = dc.getHeight();
     var width = dc.getWidth();
+    var screenHeight = System.getDeviceSettings().screenHeight;
+    var screenWidth = System.getDeviceSettings().screenWidth;
+    // At the top of onUpdate, increment reducedViewTick for blinking
+    if (height < screenHeight) {
+      reducedViewTick = (reducedViewTick + 1) % 6; // 6 seconds cycle
+    }
+
+    backgroundColor = DataField.getBackgroundColor();
+    foregroundColor = backgroundColor == 16777215 ? 0 : 16777215; //BLACK // WHITE
 
     // Force connected state in simulation mode for UI testing
     if (gopro.SIMULATION_MODE) {
@@ -191,163 +204,291 @@ class MainView extends WatchUi.DataField {
       layout.remainingText.setColor(foregroundColor);
       layout.remainingText.setText(""); // Remove log display
     } else {
-      layout.setLayout(dc, 1);
+      if (height < screenHeight) {
+        isSmallLayout = true;
+        screenCoordinates.touchEnabled = false;
 
-      layout.batteryText.setText(gopro.batteryLife + "%");
-      layout.batteryText.setColor(foregroundColor);
-      gopro.formatSettings();
-
-      layout.modeText.setColor(foregroundColor);
-      layout.modeText.setText(gopro.modeName);
-
-      layout.settingsText.setText(gopro.settings);
-      layout.settingsText.setColor(foregroundColor);
-
-      var modeIcon;
-      var statusIcon;
-      if (gopro.mode == GoPro.MODE_VIDEO) {
-        if (gopro.recording) {
-          if (backgroundColor == Graphics.COLOR_BLACK) {
-            modeIcon = Application.loadResource($.Rez.Drawables.white_hilight);
-          } else {
-            modeIcon = Application.loadResource($.Rez.Drawables.black_hilight);
-          }
+        if (width <= screenWidth / 2) {
+          layout.setLayout(dc, 3);
         } else {
-          if (backgroundColor == Graphics.COLOR_BLACK) {
-            modeIcon = Application.loadResource($.Rez.Drawables.white_video);
-          } else {
-            modeIcon = Application.loadResource($.Rez.Drawables.black_video);
-          }
+          layout.setLayout(dc, 2);
         }
-        layout.remainingText.setText(
-          Util.format_duration(
-            gopro.remainingTime - gopro.remainingTimeDelta,
-            true
-          )
-        );
+        layout.batteryText.setText(gopro.batteryLife + "%");
+        layout.batteryText.setColor(foregroundColor);
+        layout.durationText.setColor(foregroundColor);
+        layout.remainingText.setText("");
         layout.remainingText.setColor(foregroundColor);
-      } else if (gopro.mode == GoPro.MODE_TIMELAPSE) {
-        if (gopro.recording) {
-          modeIcon = Application.loadResource($.Rez.Drawables.grey_timelapse);
-        } else if (backgroundColor == Graphics.COLOR_BLACK) {
-          modeIcon = Application.loadResource($.Rez.Drawables.white_timelapse);
+        // Show remaining time
+
+        if (gopro.mode == GoPro.MODE_PHOTO) {
+          layout.durationText.setVisible(false);
         } else {
-          modeIcon = Application.loadResource($.Rez.Drawables.black_timelapse);
-        }
-        layout.remainingText.setText(
-          Util.format_duration(gopro.remainingTimelapse, true)
-        );
-        layout.remainingText.setColor(foregroundColor);
-      } else if (gopro.mode == GoPro.MODE_PHOTO) {
-        if (gopro.recording) {
-          modeIcon = Application.loadResource($.Rez.Drawables.grey_photo);
-        } else if (backgroundColor == Graphics.COLOR_BLACK) {
-          modeIcon = Application.loadResource($.Rez.Drawables.white_photo);
-        } else {
-          modeIcon = Application.loadResource($.Rez.Drawables.black_photo);
-        }
-        layout.remainingText.setText(
-          gopro.remainingPhotos > 999 ? ">999" : "" + gopro.remainingPhotos
-        );
-        layout.remainingText.setColor(foregroundColor);
-      }
-      if (gopro.recording) {
-        statusIcon =
-          backgroundColor == Graphics.COLOR_BLACK
-            ? Application.loadResource($.Rez.Drawables.white_stop)
-            : Application.loadResource($.Rez.Drawables.black_stop);
-      } else {
-        statusIcon =
-          backgroundColor == Graphics.COLOR_BLACK
-            ? Application.loadResource($.Rez.Drawables.white_record)
-            : Application.loadResource($.Rez.Drawables.black_record);
-      }
-      self.drawDeviceSpecificUI(dc, width, height, gopro, screenCoordinates, modeIcon, statusIcon);
-
-      if (!gopro.recording) {
-        if (!gopro.firstPreset || gopro.SIMULATION_MODE) {
-          screenCoordinates.prevPresetButton = [
-            [width * 0.02, width * 0.13],
-            [height * 0.47, height * 0.58],
-          ];
-
-          dc.fillPolygon([
-            [width * 0.1, height * 0.5],
-            [width * 0.1, height * 0.55],
-            [width * 0.05, height * 0.525],
-          ]);
-        } else {
-          screenCoordinates.prevPresetButton = [
-            [0, 0],
-            [0, 0],
-          ];
-        }
-        if (!gopro.lastPreset || gopro.SIMULATION_MODE) {
-          screenCoordinates.nextPresetButton = [
-            [width * 0.87, width * 0.98],
-            [height * 0.47, height * 0.58],
-          ];
-          dc.fillPolygon([
-            [width * 0.9, height * 0.5],
-            [width * 0.9, height * 0.55],
-            [width * 0.95, height * 0.525],
-          ]);
-        }
-      } else {
-        screenCoordinates.nextPresetButton = [
-          [0, 0],
-          [0, 0],
-        ];
-      }
-
-      var onOffIcon = null;
-      if (gopro.asleep) {
-        onOffIcon = Application.loadResource($.Rez.Drawables.on);
-      } else {
-        onOffIcon = Application.loadResource($.Rez.Drawables.off);
-      }
-
-      if (gopro.hasBeenConnected) {
-        if (onOffIcon != null) {
-          dc.drawBitmap(
-            width * 0.5 - onOffIcon.getWidth() / 2,
-            height * 0.02,
-            onOffIcon
+          layout.durationText.setVisible(true);
+          layout.durationText.setText(
+            Util.format_duration(gopro.recordingDuration, false)
           );
         }
-        screenCoordinates.onOffButton = [
-          [
-            width * 0.5 - onOffIcon.getWidth() / 2,
-            width * 0.5 + onOffIcon.getWidth() / 2,
-          ],
-          [height * 0.02, height * 0.02 + onOffIcon.getHeight()],
-        ];
+
+        if (gopro.mode == GoPro.MODE_VIDEO) {
+          layout.remainingText.setText(
+            Util.format_duration(
+              gopro.remainingTime - gopro.remainingTimeDelta,
+              true
+            )
+          );
+        } else if (gopro.mode == GoPro.MODE_TIMELAPSE) {
+          layout.remainingText.setText(
+            Util.format_duration(gopro.remainingTimelapse, true)
+          );
+        } else if (gopro.mode == GoPro.MODE_PHOTO) {
+          layout.remainingText.setText(
+            gopro.remainingPhotos > 999 ? ">999" : "" + gopro.remainingPhotos
+          );
+        }
+        layout.remainingText.setColor(foregroundColor);
+        // In reduced view, set color based on system timer, but only if recording
+        if (height < screenHeight && gopro.recording) {
+          var nowMs = System.getTimer(); // milliseconds since device boot
+          var blinkColor =
+            (nowMs / 1000).toNumber() % 4 < 2
+              ? Graphics.COLOR_WHITE
+              : Graphics.COLOR_RED;
+          layout.durationText.setColor(blinkColor);
+        } else {
+          layout.durationText.setColor(foregroundColor);
+        }
       } else {
-        screenCoordinates.onOffButton = [
-          [0, 0],
-          [0, 0],
-        ];
+        isSmallLayout = false;
+        layout.setLayout(dc, 1);
+
+        layout.batteryText.setText(gopro.batteryLife + "%");
+        layout.batteryText.setColor(foregroundColor);
+        gopro.formatSettings();
+
+        layout.modeText.setColor(foregroundColor);
+        layout.modeText.setText(gopro.modeName);
+
+        layout.settingsText.setText(gopro.settings);
+        layout.settingsText.setColor(foregroundColor);
+        screenCoordinates.touchEnabled = true;
+
+        var modeIcon;
+        var statusIcon;
+
+        if (gopro.mode == GoPro.MODE_PHOTO) {
+          layout.durationText.setVisible(false);
+        } else {
+          layout.durationText.setVisible(true);
+          layout.durationText.setText(
+            Util.format_duration(gopro.recordingDuration, false)
+          );
+          if (gopro.recording) {
+            dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
+            dc.fillCircle(
+              dc.getWidth() * 0.2,
+              dc.getHeight() * 0.325,
+              dc.getHeight() * 0.0875
+            );
+            dc.fillCircle(
+              dc.getWidth() * 0.8,
+              dc.getHeight() * 0.325,
+              dc.getHeight() * 0.0875
+            );
+            dc.fillRectangle(
+              dc.getWidth() * 0.2,
+              dc.getHeight() * 0.2375,
+              dc.getWidth() * 0.6,
+              dc.getHeight() * 0.178
+            );
+            layout.durationText.setColor(Graphics.COLOR_WHITE);
+            dc.setColor(foregroundColor, backgroundColor);
+          } else {
+            layout.durationText.setColor(foregroundColor);
+          }
+        }
+
+        if (gopro.mode == GoPro.MODE_VIDEO) {
+          if (gopro.recording) {
+            if (backgroundColor == Graphics.COLOR_BLACK) {
+              modeIcon = Application.loadResource(
+                $.Rez.Drawables.white_hilight
+              );
+            } else {
+              modeIcon = Application.loadResource(
+                $.Rez.Drawables.black_hilight
+              );
+            }
+          } else {
+            if (backgroundColor == Graphics.COLOR_BLACK) {
+              modeIcon = Application.loadResource($.Rez.Drawables.white_video);
+            } else {
+              modeIcon = Application.loadResource($.Rez.Drawables.black_video);
+            }
+          }
+          layout.remainingText.setText(
+            Util.format_duration(
+              gopro.remainingTime - gopro.remainingTimeDelta,
+              true
+            )
+          );
+          layout.remainingText.setColor(foregroundColor);
+        } else if (gopro.mode == GoPro.MODE_TIMELAPSE) {
+          if (gopro.recording) {
+            modeIcon = Application.loadResource($.Rez.Drawables.grey_timelapse);
+          } else if (backgroundColor == Graphics.COLOR_BLACK) {
+            modeIcon = Application.loadResource(
+              $.Rez.Drawables.white_timelapse
+            );
+          } else {
+            modeIcon = Application.loadResource(
+              $.Rez.Drawables.black_timelapse
+            );
+          }
+          layout.remainingText.setText(
+            Util.format_duration(gopro.remainingTimelapse, true)
+          );
+          layout.remainingText.setColor(foregroundColor);
+        } else if (gopro.mode == GoPro.MODE_PHOTO) {
+          if (gopro.recording) {
+            modeIcon = Application.loadResource($.Rez.Drawables.grey_photo);
+          } else if (backgroundColor == Graphics.COLOR_BLACK) {
+            modeIcon = Application.loadResource($.Rez.Drawables.white_photo);
+          } else {
+            modeIcon = Application.loadResource($.Rez.Drawables.black_photo);
+          }
+          layout.remainingText.setText(
+            gopro.remainingPhotos > 999 ? ">999" : "" + gopro.remainingPhotos
+          );
+          layout.remainingText.setColor(foregroundColor);
+        }
+        if (gopro.recording) {
+          layout.durationText.setText(gopro.recordingDuration);
+          statusIcon =
+            backgroundColor == Graphics.COLOR_BLACK
+              ? Application.loadResource($.Rez.Drawables.white_stop)
+              : Application.loadResource($.Rez.Drawables.black_stop);
+        } else {
+          statusIcon =
+            backgroundColor == Graphics.COLOR_BLACK
+              ? Application.loadResource($.Rez.Drawables.white_record)
+              : Application.loadResource($.Rez.Drawables.black_record);
+        }
+        self.drawDeviceSpecificUI(
+          dc,
+          width,
+          height,
+          gopro,
+          screenCoordinates,
+          modeIcon,
+          statusIcon
+        );
+
+        if (!gopro.recording) {
+          if (!gopro.firstPreset || gopro.SIMULATION_MODE) {
+            screenCoordinates.prevPresetButton = [
+              [width * 0.02, width * 0.13],
+              [height * 0.47, height * 0.58],
+            ];
+
+            dc.fillPolygon([
+              [width * 0.1, height * 0.5],
+              [width * 0.1, height * 0.55],
+              [width * 0.05, height * 0.525],
+            ]);
+          } else {
+            screenCoordinates.prevPresetButton = [
+              [0, 0],
+              [0, 0],
+            ];
+          }
+          if (!gopro.lastPreset || gopro.SIMULATION_MODE) {
+            screenCoordinates.nextPresetButton = [
+              [width * 0.87, width * 0.98],
+              [height * 0.47, height * 0.58],
+            ];
+            dc.fillPolygon([
+              [width * 0.9, height * 0.5],
+              [width * 0.9, height * 0.55],
+              [width * 0.95, height * 0.525],
+            ]);
+          }
+        } else {
+          screenCoordinates.nextPresetButton = [
+            [0, 0],
+            [0, 0],
+          ];
+        }
+
+        var onOffIcon = null;
+        if (gopro.asleep) {
+          onOffIcon = Application.loadResource($.Rez.Drawables.on);
+        } else {
+          onOffIcon = Application.loadResource($.Rez.Drawables.off);
+        }
+
+        if (gopro.hasBeenConnected) {
+          if (onOffIcon != null) {
+            dc.drawBitmap(
+              width * 0.5 - onOffIcon.getWidth() / 2,
+              height * 0.02,
+              onOffIcon
+            );
+          }
+          screenCoordinates.onOffButton = [
+            [
+              width * 0.5 - onOffIcon.getWidth() / 2,
+              width * 0.5 + onOffIcon.getWidth() / 2,
+            ],
+            [height * 0.02, height * 0.02 + onOffIcon.getHeight()],
+          ];
+        } else {
+          screenCoordinates.onOffButton = [
+            [0, 0],
+            [0, 0],
+          ];
+        }
       }
     }
     layout.draw(dc);
-    if (drawTap) {
-      if (tick - tapTick > 0) {
-        drawTap = false;
+    if (!isSmallLayout) {
+      if (drawTap) {
+        if (tick - tapTick > 0) {
+          drawTap = false;
+        }
+        dc.setPenWidth(3);
+        dc.setColor(backgroundColor, foregroundColor);
+        dc.fillCircle(
+          tapCoordinates[0],
+          tapCoordinates[1],
+          dc.getWidth() * 0.07
+        );
+        dc.setColor(foregroundColor, backgroundColor);
+        dc.drawCircle(
+          tapCoordinates[0],
+          tapCoordinates[1],
+          dc.getWidth() * 0.02
+        );
+        dc.drawCircle(
+          tapCoordinates[0],
+          tapCoordinates[1],
+          dc.getWidth() * 0.07
+        );
       }
-      dc.setPenWidth(3);
-      dc.setColor(backgroundColor, foregroundColor);
-      dc.fillCircle(tapCoordinates[0], tapCoordinates[1], dc.getWidth() * 0.07);
-      dc.setColor(foregroundColor, backgroundColor);
-      dc.drawCircle(tapCoordinates[0], tapCoordinates[1], dc.getWidth() * 0.02);
-      dc.drawCircle(tapCoordinates[0], tapCoordinates[1], dc.getWidth() * 0.07);
     }
   }
 
-  function handleSettingsChanged() {
-  }
+  function handleSettingsChanged() {}
 
   (:square)
-  function drawDeviceSpecificUI(dc, width, height, gopro, screenCoordinates, modeIcon, statusIcon) {
+  function drawDeviceSpecificUI(
+    dc,
+    width,
+    height,
+    gopro,
+    screenCoordinates,
+    modeIcon,
+    statusIcon
+  ) {
     if (modeIcon != null) {
       dc.drawBitmap(
         width * 0.25 - modeIcon.getWidth() / 2,
@@ -440,7 +581,15 @@ class MainView extends WatchUi.DataField {
   }
 
   (:round)
-  function drawDeviceSpecificUI(dc, width, height, gopro, screenCoordinates, modeIcon, statusIcon) {
+  function drawDeviceSpecificUI(
+    dc,
+    width,
+    height,
+    gopro,
+    screenCoordinates,
+    modeIcon,
+    statusIcon
+  ) {
     if (modeIcon != null) {
       dc.drawBitmap(
         width * 0.35 - modeIcon.getWidth() / 2,

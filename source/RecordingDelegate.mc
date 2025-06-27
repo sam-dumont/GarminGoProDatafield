@@ -24,6 +24,9 @@ class RecordingDelegate extends WatchUi.InputDelegate {
   }
 
   function onTap(clickEvent) {
+    if(screenCoordinates.touchEnabled == false) {
+      return true; // Ignore tap if touch is disabled
+    }
     var coordinates = clickEvent.getCoordinates();
     mainView.setTapCoordinates(coordinates);
     if (

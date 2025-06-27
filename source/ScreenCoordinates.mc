@@ -1,4 +1,5 @@
 class ScreenCoordinates {
+  var touchEnabled = true;
   var modeButton = [
     [0, 0],
     [0, 0],
