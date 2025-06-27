@@ -359,14 +359,19 @@ class GoPro extends Ble.BleDelegate {
   var pairingDevice = null;
   var asleep = false;
   var hasBeenConnected = false;
-  var autoReconnect = Util.replaceNull(Application.Properties.getValue("auto_reconnect"), false);
-  const SIMULATION_MODE = true; // Set to true to enable simulation mode
+  var autoReconnect = Util.replaceNull(
+    Application.Properties.getValue("auto_reconnect"),
+    false
+  );
+  var searchingStartTime = null;
+
+  const SIMULATION_MODE = false; // Set to true to enable simulation mode
 
   var commandQueue = [];
   var sendingCommand = false;
 
   // Set this to true for build/dev, false for release
-  const DEBUG_LOG = true;
+  const DEBUG_LOG = false;
 
   // Unified logging method
   function log(str) {
@@ -505,6 +510,19 @@ class GoPro extends Ble.BleDelegate {
       registerProfiles();
       Ble.setScanState(Ble.SCAN_STATE_SCANNING);
       connectionStatus = STATUS_SEARCHING;
+      searchingStartTime = System.getTimer(); // Start search timer
+    }
+  }
+
+  function onPeriodicUpdate() {
+    // Called regularly by the system (e.g., from MainView)
+    if (connectionStatus == STATUS_SEARCHING && searchingStartTime != null) {
+      var elapsed = (System.getTimer() - searchingStartTime) / 1000; // seconds
+      if (elapsed > 15) {
+        log("Search timed out after 15s, resetting connection");
+        close();
+        searchingStartTime = null;
+      }
     }
   }
 
@@ -515,6 +533,8 @@ class GoPro extends Ble.BleDelegate {
         connectionStatus = STATUS_SEARCHING;
       }
       shouldConnect = false;
+      searchingStartTime = null;
+      _resetState();
     } else {
       log("close");
       if (scanning) {
@@ -531,7 +551,70 @@ class GoPro extends Ble.BleDelegate {
         connectionStatus = STATUS_SEARCHING;
       }
       shouldConnect = false;
+      searchingStartTime = null;
+      _resetState();
     }
+  }
+
+  // Resets all GoPro state variables to their default values except profile registration
+  private function _resetState() {
+    // Command/response queues
+    commandResponse = new [0]b;
+    commandResponseQueue = [];
+    flatModeId = 0;
+    recording = false;
+    recordingDuration = 0;
+    remainingPhotos = 3600;
+    remainingTime = 3600;
+    remainingTimeDelta = 0;
+    remainingTimelapse = 3600;
+    resolution = 1;
+    scanning = false;
+    settings = "4K | 30 | L+";
+    settingsNotificationsEnabled = false;
+    settingsSubscribed = false;
+    shouldConnect = false;
+    timeLapseSpeed = 0;
+    timeWarpSpeed = 0;
+    lastPreset = false;
+    firstPreset = false;
+    foundCameraIDs = [];
+    seenDevices = [];
+    pairingDevice = null;
+    hasBeenConnected = false;
+    autoReconnect = Util.replaceNull(
+      Application.Properties.getValue("auto_reconnect"),
+      false
+    );
+    searchingStartTime = null;
+    commandQueue = [];
+    sendingCommand = false;
+    batteryLife = 100;
+    burstFrequency = 0;
+    bytesRemaining = 0;
+    // cameraID is persistent, do not reset
+    commandNotificationsEnabled = false;
+    currentPreset = null;
+    // device is handled in close(), do not reset here
+    format = 0;
+    fov = 0;
+    fps = 5;
+    lens_121 = 0;
+    lens_122 = 0;
+    lens_123 = 0;
+    liveBurstFormat = 0;
+    mode = GoPro.MODE_VIDEO;
+    modeId = 9;
+    modeName = "Standard";
+    nightLapseSpeed = 3601;
+    nightPhotoShutter = 0;
+    presetGroups = new PresetGroups(null);
+    presetListFetched = false;
+    // profileRegistered is NOT reset
+    queryNotificationsEnabled = false;
+    queryResponse = new [0]b;
+    queryResponsesQueue = [];
+    searchingStartTime = null;
   }
 
   function onScanResults(scanResults) {
@@ -807,10 +890,11 @@ class GoPro extends Ble.BleDelegate {
   }
 
   function wakeup() {
+    shouldConnect = true;
+    open();
     if (asleep) {
-      open();
+      asleep = false;
     }
-    asleep = false;
   }
 
   function getHardwareInfo() {
@@ -819,6 +903,7 @@ class GoPro extends Ble.BleDelegate {
 
   function sleep() {
     if (!asleep) {
+      shouldConnect = false; // Prevent auto-reconnect after sleep
       sendCommand("SLEEP", null);
     }
   }
@@ -929,7 +1014,13 @@ class GoPro extends Ble.BleDelegate {
 
   function onConnectedStateChanged(device, state) {
     if (device == null || state == null) {
-      log("[ERROR] onConnectedStateChanged: Not enough arguments (device=" + device + ", state=" + state + ")");
+      log(
+        "[ERROR] onConnectedStateChanged: Not enough arguments (device=" +
+          device +
+          ", state=" +
+          state +
+          ")"
+      );
       return;
     }
     if (device.getName() != null) {
@@ -956,7 +1047,6 @@ class GoPro extends Ble.BleDelegate {
       hasBeenConnected = true;
     } else {
       close();
-      // Auto-reconnect logic if enabled and not asleep
       if (autoReconnect && !asleep) {
         log("Auto-reconnect enabled, attempting to reconnect...");
         shouldConnect = true;

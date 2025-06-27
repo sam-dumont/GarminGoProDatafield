@@ -22,7 +22,6 @@ class MainView extends WatchUi.DataField {
   var tapCoordinates = [0, 0];
   var keepalive = false;
   var autoStop = false;
-  var isSmallLayout = false;
   var reducedViewTick = 0;
 
   function initialize(gopro as Ble.BleDelegate, screenCoordinates) {
@@ -193,6 +192,7 @@ class MainView extends WatchUi.DataField {
               gopro.cameraID.format("%04d"),
             ])
           );
+          gopro.onPeriodicUpdate();
         }
       } else {
         layout.durationText.setText(
@@ -205,7 +205,6 @@ class MainView extends WatchUi.DataField {
       layout.remainingText.setText(""); // Remove log display
     } else {
       if (height < screenHeight) {
-        isSmallLayout = true;
         screenCoordinates.touchEnabled = false;
 
         if (width <= screenWidth / 2) {
@@ -251,14 +250,13 @@ class MainView extends WatchUi.DataField {
           var nowMs = System.getTimer(); // milliseconds since device boot
           var blinkColor =
             (nowMs / 1000).toNumber() % 4 < 2
-              ? Graphics.COLOR_WHITE
+              ? foregroundColor
               : Graphics.COLOR_RED;
           layout.durationText.setColor(blinkColor);
         } else {
           layout.durationText.setColor(foregroundColor);
         }
       } else {
-        isSmallLayout = false;
         layout.setLayout(dc, 1);
 
         layout.batteryText.setText(gopro.batteryLife + "%");
@@ -362,7 +360,6 @@ class MainView extends WatchUi.DataField {
           layout.remainingText.setColor(foregroundColor);
         }
         if (gopro.recording) {
-          layout.durationText.setText(gopro.recordingDuration);
           statusIcon =
             backgroundColor == Graphics.COLOR_BLACK
               ? Application.loadResource($.Rez.Drawables.white_stop)
@@ -450,7 +447,7 @@ class MainView extends WatchUi.DataField {
       }
     }
     layout.draw(dc);
-    if (!isSmallLayout) {
+    if (height == screenHeight) {
       if (drawTap) {
         if (tick - tapTick > 0) {
           drawTap = false;
