@@ -22,7 +22,6 @@ class MainView extends WatchUi.DataField {
   var tapCoordinates = [0, 0];
   var keepalive = false;
   var autoStop = false;
-  var reducedViewTick = 0;
 
   function initialize(gopro as Ble.BleDelegate, screenCoordinates) {
     DataField.initialize();
@@ -115,10 +114,6 @@ class MainView extends WatchUi.DataField {
     var width = dc.getWidth();
     var screenHeight = System.getDeviceSettings().screenHeight;
     var screenWidth = System.getDeviceSettings().screenWidth;
-    // At the top of onUpdate, increment reducedViewTick for blinking
-    if (height < screenHeight) {
-      reducedViewTick = (reducedViewTick + 1) % 6; // 6 seconds cycle
-    }
 
     backgroundColor = DataField.getBackgroundColor();
     foregroundColor = backgroundColor == 16777215 ? 0 : 16777215; //BLACK // WHITE

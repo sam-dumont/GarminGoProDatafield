@@ -614,7 +614,6 @@ class GoPro extends Ble.BleDelegate {
     queryNotificationsEnabled = false;
     queryResponse = new [0]b;
     queryResponsesQueue = [];
-    searchingStartTime = null;
   }
 
   function onScanResults(scanResults) {
