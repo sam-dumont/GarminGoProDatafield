@@ -2,7 +2,7 @@ using Toybox.WatchUi;
 import Toybox.System;
 import Toybox.Lang;
 
-class RecordingDelegate extends WatchUi.BehaviorDelegate {
+class RecordingDelegate extends WatchUi.InputDelegate {
   var screenCoordinates;
   var gopro;
   var mainView;
@@ -24,6 +24,9 @@ class RecordingDelegate extends WatchUi.BehaviorDelegate {
   }
 
   function onTap(clickEvent) {
+    if(screenCoordinates.touchEnabled == false) {
+      return true; // Ignore tap if touch is disabled
+    }
     var coordinates = clickEvent.getCoordinates();
     mainView.setTapCoordinates(coordinates);
     if (

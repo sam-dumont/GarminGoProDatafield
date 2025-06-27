@@ -200,6 +200,79 @@ class Layout {
         :height => height * 0.1,
         :visible => true,
       });
+    } else if (layoutType == 2) { // Reduced view mode, full width
+      durationText.initialize({
+        :text => "00:09",
+        :color => Graphics.COLOR_WHITE,
+        :font => [fonts[3], fonts[2], fonts[1], fonts[0]],
+        :locX => 0,
+        :locY => 0,
+        :justification => Graphics.TEXT_JUSTIFY_CENTER |
+        Graphics.TEXT_JUSTIFY_VCENTER,
+        :width => width * 0.33,
+        :height => height,
+        :visible => true,
+      });
+
+      remainingText.initialize({
+        :text => "9H:59",
+        :color => Graphics.COLOR_WHITE,
+        :font => [fonts[3], fonts[2], fonts[1], fonts[0]],
+        :locX => width * 0.33,
+        :locY => 0,
+        :justification => Graphics.TEXT_JUSTIFY_CENTER |
+        Graphics.TEXT_JUSTIFY_VCENTER,
+        :width => width * 0.33,
+        :height => height,
+        :visible => true,
+      });
+
+      batteryText.initialize({
+        :text => "100%",
+        :color => Graphics.COLOR_WHITE,
+        :font => [fonts[3], fonts[2], fonts[1], fonts[0]],
+        :locX => width * 0.66,
+        :locY => 0,
+        :justification => Graphics.TEXT_JUSTIFY_CENTER |
+        Graphics.TEXT_JUSTIFY_VCENTER,
+        :width => width * 0.33,
+        :height => height,
+        :visible => true,
+      });
+
+      modeText.setVisible(false);
+      settingsText.setVisible(false);
+    }else if (layoutType == 3) { // Reduced view mode, half width
+      durationText.initialize({
+        :text => "00:09",
+        :color => Graphics.COLOR_WHITE,
+        :font => [fonts[2], fonts[1], fonts[0]],
+        :locX => 0,
+        :locY => 0,
+        :justification => Graphics.TEXT_JUSTIFY_CENTER |
+        Graphics.TEXT_JUSTIFY_VCENTER,
+        :width => width * 0.50,
+        :height => height,
+        :visible => true,
+      });
+
+
+      batteryText.initialize({
+        :text => "100%",
+        :color => Graphics.COLOR_WHITE,
+        :font => [fonts[2], fonts[1], fonts[0]],
+        :locX => width * 0.50,
+        :locY => 0,
+        :justification => Graphics.TEXT_JUSTIFY_CENTER |
+        Graphics.TEXT_JUSTIFY_VCENTER,
+        :width => width * 0.50,
+        :height => height,
+        :visible => true,
+      });
+
+      remainingText.setVisible(false);
+      modeText.setVisible(false);
+      settingsText.setVisible(false);
     }
   }
 
