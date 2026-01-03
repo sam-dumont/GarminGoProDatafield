@@ -15,3 +15,11 @@ I am currently experimenting with Edge Remote to see if it could be used to cont
 - stop button by ProSymbols from <a href="https://thenounproject.com/browse/icons/term/stop-button/" target="_blank" title="stop button Icons">Noun Project</a> (CC BY 3.0)
 - bookmark by Soetarman Atmodjo from <a href="https://thenounproject.com/browse/icons/term/bookmark/" target="_blank" title="bookmark Icons">Noun Project</a> (CC BY 3.0)
 - on by WASIM MOLLA from <a href="https://thenounproject.com/browse/icons/term/on/" target="_blank" title="on Icons">Noun Project</a> (CC BY 3.0)
+
+## Contributing
+
+Ensure you've got a developer key for your Monkey C setup, in VS Code you can
+run the "Generate a Developer Key" shortcut.
+
+Building this project for local testing and developement is done by executing
+`build.sh` in the root of the repository.
