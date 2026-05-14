@@ -20,11 +20,13 @@ class PresetGroups {
 
   function parse() {
     if (data != null && !parsed) {
-      // Use generated protobuf class to decode
+      // Use generated protobuf class to decode. The Decode methods take a
+      // Protobuf.Decoder now (zero-copy nested-message decoding); we wrap
+      // the raw bytes here at the top-level call site.
       var notify = new NotifyPresetStatus();
-      notify.Decode(data);
+      notify.Decode(new Protobuf.Decoder(data));
       // Populate presets and presetsIndexes from decoded data
-      var presetGroups = notify.GetPresetGroupArray();
+      var presetGroups = notify.presetGroupArray;
       for (var i = 0; i < presetGroups.size(); i++) {
         var group = presetGroups[i];
         var groupId = group.id.toNumber();
