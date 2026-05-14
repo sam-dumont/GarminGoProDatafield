@@ -824,10 +824,11 @@ class GoPro extends Ble.BleDelegate {
 
   function onScanResults(scanResults) {
     for (
-      var result = scanResults.next();
-      result != null;
-      result = scanResults.next()
+      var next = scanResults.next();
+      next != null;
+      next = scanResults.next()
     ) {
+      var result = next as Ble.ScanResult;
       var uuids = result.getServiceUuids();
       var matches = false;
       for (var u = uuids.next(); u != null; u = uuids.next()) {

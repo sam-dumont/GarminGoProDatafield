@@ -27,7 +27,7 @@ class GarminGoProDatafieldApp extends Application.AppBase {
     gopro.registerProfiles();
 
     // If we have a previously-paired GoPro, reconnect directly. No scan.
-    var paired = Application.Storage.getValue(GoProSensorDelegate.PAIRED_SCAN_RESULT) as Ble.ScanResult?;
+    var paired = Application.Storage.getValue($.PAIRED_SCAN_RESULT) as Ble.ScanResult?;
     if (paired != null) {
       Ble.pairDevice(paired);
     }
@@ -47,7 +47,7 @@ class GarminGoProDatafieldApp extends Application.AppBase {
     return new GoProSensorDelegate();
   }
 
-  function getInitialView() as Array<Views or InputDelegates>? {
+  function getInitialView() as [WatchUi.Views] or [WatchUi.Views, WatchUi.InputDelegates] {
     Application.Storage.setValue("scanResult", null);
     if (Application.Storage.getValue("lastPresetGroupUploaded") == null) {
       Application.Storage.setValue("lastPresetGroupUploaded", false);
@@ -56,10 +56,7 @@ class GarminGoProDatafieldApp extends Application.AppBase {
     screenCoordinates = new ScreenCoordinates();
     $.mainView = new MainView(gopro, screenCoordinates);
 
-    return [
-      $.mainView,
-      new RecordingDelegate(gopro, screenCoordinates, $.mainView),
-    ] as Array<Views or InputDelegates>;
+    return [$.mainView, new RecordingDelegate(gopro, screenCoordinates, $.mainView)];
   }
 
   function onSettingsChanged() {

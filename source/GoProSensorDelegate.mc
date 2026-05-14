@@ -10,11 +10,12 @@ import Toybox.Application;
 import Toybox.Lang;
 import Toybox.Sensor;
 
-class GoProSensorDelegate extends Sensor.SensorDelegate {
-  // Storage key for the persisted ScanResult of a previously-paired GoPro.
-  // Read by the activity-time App.onStart to drive reconnect.
-  const PAIRED_SCAN_RESULT = "paired_scan_result";
+// Storage key for the persisted ScanResult of a previously-paired GoPro.
+// Module-level (not class-level) so it can be read from App.onStart without
+// requiring a SensorDelegate instance — they live in different app contexts.
+const PAIRED_SCAN_RESULT = "paired_scan_result";
 
+class GoProSensorDelegate extends Sensor.SensorDelegate {
   // Our own BLE delegate, used only during the pairing-flow scan. It is
   // separate from the GoPro BleDelegate the main App.onStart constructs.
   private var _pairingBle as GoPro;
