@@ -366,6 +366,12 @@ class GoPro extends Ble.BleDelegate {
 
   const SIMULATION_MODE = false; // Set to true to enable simulation mode
 
+  // Optional callbacks set by the pairing-time GoProSensorDelegate instance.
+  // Null in the activity-time instance (which does not scan and handles
+  // connection state internally).
+  var onScanResultCallback as Lang.Method?;
+  var onConnectionCallback as Lang.Method?;
+
   var commandQueue = [];
   var sendingCommand = false;
 
@@ -814,6 +820,27 @@ class GoPro extends Ble.BleDelegate {
     }
   }
 
+  function onScanResults(scanResults) {
+    for (
+      var result = scanResults.next();
+      result != null;
+      result = scanResults.next()
+    ) {
+      var uuids = result.getServiceUuids();
+      var matches = false;
+      for (var u = uuids.next(); u != null; u = uuids.next()) {
+        if (u.equals(CONTROL_AND_QUERY_SERVICE)) {
+          matches = true;
+          break;
+        }
+      }
+      if (matches && onScanResultCallback != null) {
+        log("scan match: " + result.getDeviceName());
+        onScanResultCallback.invoke(result);
+      }
+    }
+  }
+
   function onDescriptorWrite(desc, value) {
     log("descriptor write " + desc.getUuid() + " " + value);
     if (!commandNotificationsEnabled) {
@@ -910,15 +937,16 @@ class GoPro extends Ble.BleDelegate {
     if (state == Ble.CONNECTION_STATE_CONNECTED) {
       asleep = false;
       self.device = device;
-      self.device.requestBond();
       hasBeenConnected = true;
     } else {
-      // close();
       if (autoReconnect && !asleep) {
         log("Auto-reconnect enabled, attempting to reconnect...");
         shouldConnect = true;
-        // open();
       }
+    }
+
+    if (state == Ble.CONNECTION_STATE_CONNECTED && onConnectionCallback != null) {
+      onConnectionCallback.invoke(device);
     }
   }
 
