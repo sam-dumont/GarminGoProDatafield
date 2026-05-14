@@ -6,7 +6,8 @@ Licensed under Apache License
 
 using Toybox.Lang;
 using Toybox.Application;
-import Protobuf;
+using OpenGopro;
+import ProtobufLib;
 
 class PresetGroups {
   var data;
@@ -20,22 +21,21 @@ class PresetGroups {
 
   function parse() {
     if (data != null && !parsed) {
-      // Use generated protobuf class to decode. The Decode methods take a
-      // Protobuf.Decoder now (zero-copy nested-message decoding); we wrap
-      // the raw bytes here at the top-level call site.
-      var notify = new NotifyPresetStatus();
-      notify.Decode(new Protobuf.Decoder(data));
-      // Populate presets and presetsIndexes from decoded data
-      var presetGroups = notify.presetGroupArray;
+      // The generated NotifyPresetStatus.decode accepts a raw ByteArray
+      // (it constructs an internal ProtobufLib.Decoder). Nested message
+      // decoding then uses subDecoder() for zero-copy traversal.
+      var notify = new OpenGopro.NotifyPresetStatus();
+      notify.decode(data);
+      var presetGroups = notify.getPresetGroupArray();
       for (var i = 0; i < presetGroups.size(); i++) {
         var group = presetGroups[i];
-        var groupId = group.id.toNumber();
+        var groupId = group.getId().toNumber();
         presets.put(groupId, {});
         presetsIndexes.put(groupId, []);
-        var presetArray = group.presetArray;
+        var presetArray = group.getPresetArray();
         for (var j = 0; j < presetArray.size(); j++) {
           var preset = presetArray[j];
-          var presetId = preset.id.toNumber();
+          var presetId = preset.getId().toNumber();
           presets.get(groupId).put(presetId, preset);
           presetsIndexes.get(groupId).add(presetId);
         }

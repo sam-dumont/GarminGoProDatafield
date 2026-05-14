@@ -55,7 +55,7 @@
             command palette to edit the included barrels.
         -->
         <iq:barrels>
-            <iq:depends name="Protobuf" version="0.1.0"/>
+            <iq:depends name="ProtobufLib" version="0.2.0"/>
         </iq:barrels>
     </iq:application>
 </iq:manifest>

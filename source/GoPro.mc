@@ -1133,8 +1133,8 @@ class GoPro extends Ble.BleDelegate {
       lastPreset = true;
     }
     if (currentPreset != null) {
-      flatModeId = currentPreset.mode;
-      modeName = PRESET_TITLES_IDS.get(currentPreset.titleId);
+      flatModeId = currentPreset.getMode();
+      modeName = PRESET_TITLES_IDS.get(currentPreset.getTitleId());
       if (modeName == null) {
         // Fallback: use flat mode name if available
         if (mode == GoPro.MODE_VIDEO) {
@@ -1147,8 +1147,9 @@ class GoPro extends Ble.BleDelegate {
           modeName = "Unknown";
         }
       }
-      if (currentPreset.titleNumber > 0) {
-        modeName = modeName + " " + currentPreset.titleNumber;
+      var tn = currentPreset.getTitleNumber();
+      if (tn > 0) {
+        modeName = modeName + " " + tn;
       }
     }
     var lFov = null;
