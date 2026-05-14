@@ -901,7 +901,6 @@ class GoPro extends Ble.BleDelegate {
     log("device paired successfully !");
     log("bonded: " + device.getName() + " " + status);
     if (status == Ble.STATUS_SUCCESS) {
-      Application.Storage.setValue("paired", true);
       enableNotifications(COMMAND_NOTIFICATION);
     }
   }
