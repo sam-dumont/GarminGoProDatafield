@@ -6,6 +6,7 @@ using Toybox.Application;
 using Toybox.Lang;
 using Toybox.StringUtil;
 using Toybox.Time;
+using Toybox.Timer;
 
 class GoPro extends Ble.BleDelegate {
   const DEVICE_NAME = "GoPro Cam";
@@ -364,6 +365,7 @@ class GoPro extends Ble.BleDelegate {
     false
   );
   var searchingStartTime = null;
+  var connectingWatchdog as Timer.Timer? = null;
 
   const SIMULATION_MODE = false; // Set to true to enable simulation mode
 
@@ -858,6 +860,7 @@ class GoPro extends Ble.BleDelegate {
       settingsNotificationsEnabled = true;
       log("all notifications enabled");
       connectionStatus = STATUS_CONNECTED;
+      stopConnectingWatchdog();
       sendQuery("VALUES_UPDATES");
     }
   }
@@ -943,6 +946,7 @@ class GoPro extends Ble.BleDelegate {
       asleep = false;
       self.device = device;
       hasBeenConnected = true;
+      startConnectingWatchdog();
     } else {
       if (autoReconnect && !asleep) {
         log("Auto-reconnect enabled, attempting to reconnect...");
@@ -952,6 +956,41 @@ class GoPro extends Ble.BleDelegate {
 
     if (state == Ble.CONNECTION_STATE_CONNECTED && onConnectionCallback != null) {
       onConnectionCallback.invoke(device);
+    }
+  }
+
+  function startConnectingWatchdog() {
+    stopConnectingWatchdog();
+    connectingWatchdog = new Timer.Timer();
+    connectingWatchdog.start(method(:onConnectingTimeout), 10000, false);
+  }
+
+  function stopConnectingWatchdog() {
+    if (connectingWatchdog != null) {
+      connectingWatchdog.stop();
+      connectingWatchdog = null;
+    }
+  }
+
+  function onConnectingTimeout() as Void {
+    var allEnabled = commandNotificationsEnabled
+      && queryNotificationsEnabled
+      && settingsNotificationsEnabled;
+    if (connectionStatus == STATUS_CONNECTING ||
+        (connectionStatus == STATUS_CONNECTED && !allEnabled)) {
+      log("connecting watchdog fired — resetting and re-pairing");
+      var paired = Application.Storage.getValue($.PAIRED_SCAN_RESULT) as Ble.ScanResult?;
+      if (device != null) {
+        Ble.unpairDevice(device);
+        device = null;
+      }
+      commandNotificationsEnabled = false;
+      queryNotificationsEnabled = false;
+      settingsNotificationsEnabled = false;
+      connectionStatus = STATUS_SEARCHING;
+      if (paired != null) {
+        Ble.pairDevice(paired);
+      }
     }
   }
 
