@@ -308,7 +308,8 @@ class GoPro extends Ble.BleDelegate {
 
   var batteryLife = 100;
   var burstFrequency = 0;
-  var bytesRemaining = 0;
+  var queryBytesRemaining = 0;
+  var commandBytesRemaining = 0;
   var cameraID = Util.replaceNull(
     Application.Properties.getValue("gopro_id"),
     0
@@ -553,7 +554,8 @@ class GoPro extends Ble.BleDelegate {
     sendingCommand = false;
     batteryLife = 100;
     burstFrequency = 0;
-    bytesRemaining = 0;
+    queryBytesRemaining = 0;
+    commandBytesRemaining = 0;
     // cameraID is persistent, do not reset
     commandNotificationsEnabled = false;
     currentPreset = null;
@@ -963,21 +965,21 @@ class GoPro extends Ble.BleDelegate {
         queryResponse = new [0]b;
         var hdr = (buf[0] & HDR_MASK) >> 5;
         if (hdr == GENERAL) {
-          bytesRemaining = buf[0] & GEN_LEN_MASK;
+          queryBytesRemaining = buf[0] & GEN_LEN_MASK;
           buf = buf.slice(1, null);
         } else if (hdr == EXT_13) {
-          bytesRemaining = ((buf[0] & EXT_13_BYTE0_MASK) << 8) + buf[1];
+          queryBytesRemaining = ((buf[0] & EXT_13_BYTE0_MASK) << 8) + buf[1];
           buf = buf.slice(2, null);
         } else if (hdr == EXT_16) {
-          bytesRemaining = (buf[1] << 8) + buf[2];
+          queryBytesRemaining = (buf[1] << 8) + buf[2];
           buf = buf.slice(3, null);
         }
       }
       queryResponse = queryResponse.addAll(buf);
-      bytesRemaining -= buf.size();
-      if (bytesRemaining < 0) {
+      queryBytesRemaining -= buf.size();
+      if (queryBytesRemaining < 0) {
         log("received too much data. parsing is in unknown state");
-      } else if (bytesRemaining == 0) {
+      } else if (queryBytesRemaining == 0) {
         parseQueryResponse();
       }
     }
@@ -993,21 +995,21 @@ class GoPro extends Ble.BleDelegate {
         commandResponse = new [0]b;
         var hdr = (buf[0] & HDR_MASK) >> 5;
         if (hdr == GENERAL) {
-          bytesRemaining = buf[0] & GEN_LEN_MASK;
+          commandBytesRemaining = buf[0] & GEN_LEN_MASK;
           buf = buf.slice(1, null);
         } else if (hdr == EXT_13) {
-          bytesRemaining = ((buf[0] & EXT_13_BYTE0_MASK) << 8) + buf[1];
+          commandBytesRemaining = ((buf[0] & EXT_13_BYTE0_MASK) << 8) + buf[1];
           buf = buf.slice(2, null);
         } else if (hdr == EXT_16) {
-          bytesRemaining = (buf[1] << 8) + buf[2];
+          commandBytesRemaining = (buf[1] << 8) + buf[2];
           buf = buf.slice(3, null);
         }
       }
       commandResponse = commandResponse.addAll(buf);
-      bytesRemaining -= buf.size();
-      if (bytesRemaining < 0) {
+      commandBytesRemaining -= buf.size();
+      if (commandBytesRemaining < 0) {
         log("received too much data. parsing is in unknown state");
-      } else if (bytesRemaining == 0) {
+      } else if (commandBytesRemaining == 0) {
         parseCommandResponse(commandResponse);
       }
     }
