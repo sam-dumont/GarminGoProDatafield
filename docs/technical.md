@@ -149,3 +149,31 @@ Commands are enqueued and sent one at a time. After each command is sent, the ne
 ## See Also
 - [User Manual](user_manual.md)
 - [Diagrams](diagrams.md)
+
+---
+
+## Native Pairing Test Plan (added 2026-05)
+
+Run after any change to `GoPro.mc`, `GoProSensorDelegate.mc`, or
+`GarminGoProDatafield.mc`. Target device: Edge 1040 simulator.
+
+### Fresh-install pairing
+1. Build: `./build.sh dev key_path`
+2. Open `bin/GarminGoProDatafield.prg` in the CIQ simulator (Edge 1040).
+3. Add the datafield to an activity profile.
+4. Navigate to the simulator's Sensors & Accessories menu.
+5. **Expected:** the datafield appears under "Connect IQ / GoPro Remote".
+6. Tap it → simulator runs `onScan()` → `Ble.setScanState(SCANNING)`.
+7. Use simulator BLE → "Add Scan Result" with service UUID `0000fea6-0000-1000-8000-00805f9b34fb` and name `GoPro 1624`.
+8. **Expected:** the scan result appears in the system pairing UI as `GoPro 1624`.
+9. Tap it → `onPair()` → `Ble.pairDevice()` → `onConnectedStateChanged(CONNECTED)` → `procConnection` → `Sensor.notifyPairComplete`.
+10. **Expected:** the system marks the sensor as paired and `Application.Storage` now contains a `paired_scan_result` value.
+
+### Reconnect across restart
+1. With the GoPro paired from the prior test, stop the simulator.
+2. Restart the simulator and reopen the .prg.
+3. **Expected:** `App.onStart` reads `paired_scan_result` from Storage and calls `Ble.pairDevice` directly. No scan UI is shown. `onConnectedStateChanged(CONNECTED)` fires shortly.
+
+### Unpair flow
+1. From a paired state, navigate to Sensors & Accessories → GoPro → Remove.
+2. **Expected:** `onUnpair()` runs, `Sensor.notifyUnpairComplete` is called, `paired_scan_result` is deleted from Storage.
