@@ -60,25 +60,24 @@ class MainView extends WatchUi.DataField {
   }
 
   function onTimerResume() {
-    gopro.open();
+    // Connection lifecycle is owned by SensorDelegate + system pairing.
+    // Activity-timer transitions no longer tear down the BLE link.
   }
 
   function onTimerReset() {
-    gopro.close();
+    // See onTimerResume — intentionally empty.
   }
 
   function onTimerStop() {
     if (autoStop && gopro.recording && gopro.mode != GoPro.MODE_PHOTO) {
       gopro.sendCommand("SHUTTER_OFF", null);
     }
-    gopro.close();
   }
 
   function onTimerPause() {
     if (autoStop && gopro.recording && gopro.mode != GoPro.MODE_PHOTO) {
       gopro.sendCommand("SHUTTER_OFF", null);
     }
-    gopro.close();
   }
 
   function setTapCoordinates(coordinates) {
