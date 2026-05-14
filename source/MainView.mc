@@ -242,14 +242,11 @@ class MainView extends WatchUi.DataField {
           );
         }
         layout.remainingText.setColor(foregroundColor);
-        // In reduced view, set color based on system timer, but only if recording
-        if (height < screenHeight && gopro.recording) {
-          var nowMs = System.getTimer(); // milliseconds since device boot
-          var blinkColor =
-            (nowMs / 1000).toNumber() % 4 < 2
-              ? foregroundColor
-              : Graphics.COLOR_RED;
-          layout.durationText.setColor(blinkColor);
+        if (gopro.recording) {
+          // Light red background tint behind the duration row (top half of reduced view).
+          dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
+          dc.fillRectangle(0, 0, dc.getWidth() * 0.33, dc.getHeight() * 0.5);
+          layout.durationText.setColor(Graphics.COLOR_WHITE);
         } else {
           layout.durationText.setColor(foregroundColor);
         }
