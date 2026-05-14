@@ -199,6 +199,15 @@ class GoPro extends Ble.BleDelegate {
     40 => "Chesty",
     41 => "Helmet",
     42 => "Bite",
+    // Hero 13 / Max 2 additions (Open API v2.1 preset_status.proto)
+    43 => "Cinematic",
+    44 => "Vlog",
+    45 => "FPV",
+    46 => "HDR",
+    47 => "Landscape",
+    48 => "Log",
+    49 => "SloMo",
+    50 => "Tripod",
     55 => "Video Max",
     58 => "Basic",
     59 => "Ultra SloMo",
@@ -225,6 +234,17 @@ class GoPro extends Ble.BleDelegate {
     83 => "Basic Quality Video",
     93 => "Highest Quality Video",
     94 => "Used Defined",
+    // Hero 13 / Max 2 additions
+    99 => "Standard",
+    100 => "HDR",
+    106 => "Burst SloMo",
+    125 => "Video 4:3",
+    126 => "Video 16:9",
+    127 => "SloMo 16:9",
+    131 => "Time Lapse",
+    132 => "Time Lapse",
+    133 => "Night Lapse",
+    134 => "Night Lapse",
   };
 
   const NIGHT_LAPSE_SPEED = {
