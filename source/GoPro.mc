@@ -922,11 +922,14 @@ class GoPro extends Ble.BleDelegate {
       log("device connected: " + device.getName());
       log(device.getName() + " " + state);
       // New: If cameraID is 0 or null, extract from device name and save
+      var devName = device.getName();
       if (
         (cameraID == null || cameraID == 0) &&
-        device.getName().find("GoPro ") == 0
+        devName != null &&
+        devName.length() > 6 &&
+        devName.find("GoPro ") == 0
       ) {
-        var idStr = device.getName().substring(6); // after "GoPro "
+        var idStr = devName.substring(6, devName.length());
         var idNum = idStr.toNumber();
         if (idNum != null && idNum > 0) {
           cameraID = idNum;
