@@ -211,6 +211,9 @@ class MainView extends WatchUi.DataField {
         layout.durationText.setColor(foregroundColor);
         layout.remainingText.setText("");
         layout.remainingText.setColor(foregroundColor);
+        gopro.formatSettings();
+        layout.modeText.setText(gopro.modeName + " · " + gopro.settings);
+        layout.modeText.setColor(foregroundColor);
         // Show remaining time
 
         if (gopro.mode == GoPro.MODE_PHOTO) {

@@ -201,78 +201,102 @@ class Layout {
         :visible => true,
       });
     } else if (layoutType == 2) {
-      // Reduced view mode, full width
+      // Reduced view mode, full width — 2 rows: stats on top, mode+format below
       durationText.initialize({
         :text => "00:09",
         :color => Graphics.COLOR_WHITE,
-        :font => [fonts[3], fonts[2], fonts[1], fonts[0]],
+        :font => [fonts[2], fonts[1], fonts[0]],
         :locX => 0,
         :locY => 0,
         :justification => Graphics.TEXT_JUSTIFY_CENTER |
         Graphics.TEXT_JUSTIFY_VCENTER,
         :width => width * 0.33,
-        :height => height,
+        :height => height * 0.5,
         :visible => true,
       });
 
       remainingText.initialize({
         :text => "9H:59",
         :color => Graphics.COLOR_WHITE,
-        :font => [fonts[3], fonts[2], fonts[1], fonts[0]],
+        :font => [fonts[2], fonts[1], fonts[0]],
         :locX => width * 0.33,
         :locY => 0,
         :justification => Graphics.TEXT_JUSTIFY_CENTER |
         Graphics.TEXT_JUSTIFY_VCENTER,
         :width => width * 0.33,
-        :height => height,
+        :height => height * 0.5,
         :visible => true,
       });
 
       batteryText.initialize({
         :text => "100%",
         :color => Graphics.COLOR_WHITE,
-        :font => [fonts[3], fonts[2], fonts[1], fonts[0]],
+        :font => [fonts[2], fonts[1], fonts[0]],
         :locX => width * 0.66,
         :locY => 0,
         :justification => Graphics.TEXT_JUSTIFY_CENTER |
         Graphics.TEXT_JUSTIFY_VCENTER,
         :width => width * 0.33,
-        :height => height,
+        :height => height * 0.5,
         :visible => true,
       });
 
-      modeText.setVisible(false);
+      modeText.initialize({
+        :text => "Standard · 4K | 30 | L+",
+        :color => Graphics.COLOR_WHITE,
+        :font => [fonts[1], fonts[0]],
+        :locX => 0,
+        :locY => height * 0.5,
+        :justification => Graphics.TEXT_JUSTIFY_CENTER |
+        Graphics.TEXT_JUSTIFY_VCENTER,
+        :width => width,
+        :height => height * 0.5,
+        :visible => true,
+      });
+
       settingsText.setVisible(false);
     } else if (layoutType == 3) {
-      // Reduced view mode, half width
+      // Reduced view mode, half width — 2 rows: stats on top, mode+format below
       durationText.initialize({
         :text => "00:09",
         :color => Graphics.COLOR_WHITE,
-        :font => [fonts[2], fonts[1], fonts[0]],
+        :font => [fonts[1], fonts[0]],
         :locX => 0,
         :locY => 0,
         :justification => Graphics.TEXT_JUSTIFY_CENTER |
         Graphics.TEXT_JUSTIFY_VCENTER,
         :width => width * 0.5,
-        :height => height,
+        :height => height * 0.5,
         :visible => true,
       });
 
       batteryText.initialize({
         :text => "100%",
         :color => Graphics.COLOR_WHITE,
-        :font => [fonts[2], fonts[1], fonts[0]],
+        :font => [fonts[1], fonts[0]],
         :locX => width * 0.5,
         :locY => 0,
         :justification => Graphics.TEXT_JUSTIFY_CENTER |
         Graphics.TEXT_JUSTIFY_VCENTER,
         :width => width * 0.5,
-        :height => height,
+        :height => height * 0.5,
+        :visible => true,
+      });
+
+      modeText.initialize({
+        :text => "4K | 30 | L+",
+        :color => Graphics.COLOR_WHITE,
+        :font => [fonts[0]],
+        :locX => 0,
+        :locY => height * 0.5,
+        :justification => Graphics.TEXT_JUSTIFY_CENTER |
+        Graphics.TEXT_JUSTIFY_VCENTER,
+        :width => width,
+        :height => height * 0.5,
         :visible => true,
       });
 
       remainingText.setVisible(false);
-      modeText.setVisible(false);
       settingsText.setVisible(false);
     }
   }
