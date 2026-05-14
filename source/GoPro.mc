@@ -345,7 +345,6 @@ class GoPro extends Ble.BleDelegate {
   var remainingTimeDelta = 0;
   var remainingTimelapse = 3600;
   var resolution = 1;
-  var scanning = false;
   var settings = "4K | 30 | L+";
   var settingsNotificationsEnabled = false;
   var settingsSubscribed = false;
@@ -502,57 +501,15 @@ class GoPro extends Ble.BleDelegate {
     }
   }
 
-  function open() {
-    if (SIMULATION_MODE) {
-      log("[SIM] open called, BLE logic skipped");
-      connectionStatus = STATUS_SEARCHING;
-    } else {
-      registerProfiles();
-      Ble.setScanState(Ble.SCAN_STATE_SCANNING);
-      connectionStatus = STATUS_SEARCHING;
-      searchingStartTime = System.getTimer(); // Start search timer
-    }
-  }
-
   function onPeriodicUpdate() {
     // Called regularly by the system (e.g., from MainView)
     if (connectionStatus == STATUS_SEARCHING && searchingStartTime != null) {
       var elapsed = (System.getTimer() - searchingStartTime) / 1000; // seconds
       if (elapsed > 15) {
         log("Search timed out after 15s, resetting connection");
-        close();
+        // close();
         searchingStartTime = null;
       }
-    }
-  }
-
-  function close() {
-    if (SIMULATION_MODE) {
-      log("[SIM] close called, BLE logic skipped");
-      if (!asleep) {
-        connectionStatus = STATUS_SEARCHING;
-      }
-      shouldConnect = false;
-      searchingStartTime = null;
-      _resetState();
-    } else {
-      log("close");
-      if (scanning) {
-        Ble.setScanState(Ble.SCAN_STATE_OFF);
-      }
-      if (device) {
-        Ble.unpairDevice(device);
-        self.device = null;
-      }
-      commandNotificationsEnabled = false;
-      settingsNotificationsEnabled = false;
-      queryNotificationsEnabled = false;
-      if (!asleep) {
-        connectionStatus = STATUS_SEARCHING;
-      }
-      shouldConnect = false;
-      searchingStartTime = null;
-      _resetState();
     }
   }
 
@@ -569,7 +526,6 @@ class GoPro extends Ble.BleDelegate {
     remainingTimeDelta = 0;
     remainingTimelapse = 3600;
     resolution = 1;
-    scanning = false;
     settings = "4K | 30 | L+";
     settingsNotificationsEnabled = false;
     settingsSubscribed = false;
@@ -614,84 +570,6 @@ class GoPro extends Ble.BleDelegate {
     queryNotificationsEnabled = false;
     queryResponse = new [0]b;
     queryResponsesQueue = [];
-  }
-
-  function onScanResults(scanResults) {
-    if (SIMULATION_MODE) {
-      log("[SIM] onScanResults called, BLE logic skipped");
-      // Simulate scan results if needed
-    } else {
-      var name;
-      var uuids;
-      for (
-        var result = scanResults.next();
-        result != null;
-        result = scanResults.next()
-      ) {
-        name = result.getDeviceName();
-        uuids = result.getServiceUuids();
-        for (var x = uuids.next(); x != null; x = uuids.next()) {
-          var seenDevice = Lang.format("uuid: $1$, name: $2$", [x, name]);
-          if (
-            seenDevices.indexOf(seenDevice) == -1 &&
-            x.equals(CONTROL_AND_QUERY_SERVICE)
-          ) {
-            seenDevices.add(seenDevice);
-            log(Lang.format("Seen Devices: $1$", [seenDevices]));
-          }
-          // New: If cameraID is 0 or null, connect to first GoPro found
-          if (
-            (cameraID == null || cameraID == 0) &&
-            name != null &&
-            name.find("GoPro") != null &&
-            x.equals(CONTROL_AND_QUERY_SERVICE)
-          ) {
-            log("No cameraID set, connecting to first GoPro found: " + name);
-            connectionStatus = STATUS_CONNECTING;
-            connect(result);
-            return;
-          }
-          if (
-            pairingDevice == null &&
-            x.equals(PAIR_SERVICE) &&
-            (name == null || name.equals("GoPro Cam"))
-          ) {
-            pairingDevice = result;
-          }
-          if (shouldConnect && x.equals(CONTROL_AND_QUERY_SERVICE)) {
-            if (
-              name != null &&
-              name.find("GoPro") != null &&
-              foundCameraIDs.indexOf(name) == -1
-            ) {
-              foundCameraIDs.add(name);
-            }
-            if (
-              Application.Storage.getValue("paired") != null &&
-              Application.Storage.getValue("paired")
-            ) {
-              if (
-                cameraID != null &&
-                cameraID != 0 &&
-                (name == null ||
-                  name.equals("GoPro " + cameraID.format("%04d")))
-              ) {
-                log("found matching device. uuid: " + x);
-                log("connecting to camera with id:" + name);
-                connectionStatus = STATUS_CONNECTING;
-                connect(result);
-                return;
-              }
-            } else if (pairingDevice != null || name == null) {
-              log("pairing camera for the first time");
-              connectionStatus = STATUS_CONNECTING;
-              connect(result);
-              return;
-            }
-          }
-        }
-      }
-    }
   }
 
   function parseQueryResponse() {
@@ -883,14 +761,14 @@ class GoPro extends Ble.BleDelegate {
       if (commandId == RESPONSE_TYPE_SLEEP && status == 0) {
         asleep = true;
         connectionStatus = STATUS_SLEEP;
-        close();
+        // close();
       }
     }
   }
 
   function wakeup() {
     shouldConnect = true;
-    open();
+    // open();
     if (asleep) {
       asleep = false;
     }
@@ -992,16 +870,6 @@ class GoPro extends Ble.BleDelegate {
     }
   }
 
-  function onScanStateChange(scanState, status) {
-    log("scanstate: " + scanState + " " + status);
-    if (scanState == Ble.SCAN_STATE_SCANNING) {
-      log("Starting scanning for GoPro");
-      scanning = true;
-    } else {
-      scanning = false;
-    }
-  }
-
   function onEncryptionStatus(device, status) {
     log("device paired successfully !");
     log("bonded: " + device.getName() + " " + status);
@@ -1045,21 +913,12 @@ class GoPro extends Ble.BleDelegate {
       self.device.requestBond();
       hasBeenConnected = true;
     } else {
-      close();
+      // close();
       if (autoReconnect && !asleep) {
         log("Auto-reconnect enabled, attempting to reconnect...");
         shouldConnect = true;
-        open();
+        // open();
       }
-    }
-  }
-
-  private function connect(result) {
-    log("connect");
-    Ble.setScanState(Ble.SCAN_STATE_OFF);
-    var ld = Ble.pairDevice(result);
-    if (ld != null) {
-      Application.Storage.setValue("scanResult", result);
     }
   }
 

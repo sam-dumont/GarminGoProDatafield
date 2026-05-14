@@ -4,15 +4,24 @@ import Toybox.WatchUi;
 import Toybox.Time;
 using Toybox.Background;
 using Toybox.BluetoothLowEnergy as Ble;
+using Toybox.Sensor;
 
 var mainView;
 
 class GarminGoProDatafieldApp extends Application.AppBase {
+  var goproSensorDelegate;
   var gopro;
   var screenCoordinates;
 
   function initialize() {
     AppBase.initialize();
+    // Do not instantiate GoProSensorDelegate here; handled by getSensorDelegate()
+  }
+
+  //! Get the sensor delegate for the app when pairing
+  //! @return SensorDelegate The sensor delegate for the app
+  public function getSensorDelegate() as $.Toybox.Sensor.SensorDelegate or Null {
+    return new GoProSensorDelegate(gopro);
   }
 
   // onStart() is called on application start up
@@ -22,10 +31,8 @@ class GarminGoProDatafieldApp extends Application.AppBase {
 
   // onStop() is called when your application is exiting
   function onStop(state as Dictionary?) as Void {
-    if (gopro != null && gopro.device != null) {
-      gopro.close();
-    }
     gopro = null;
+    goproSensorDelegate = null;
     screenCoordinates = null;
     AppBase.onStop(state);
   }
@@ -38,14 +45,8 @@ class GarminGoProDatafieldApp extends Application.AppBase {
       Application.Storage.setValue("lastPresetGroupUploaded", false);
     }
 
-    if (Application.Storage.getValue("paired") == null) {
-      Application.Storage.setValue("paired", false);
-    }
-
-    gopro = new GoPro();
+    gopro = new GoPro(); // Use the BLE delegate from the sensor delegate
     screenCoordinates = new ScreenCoordinates();
-    Ble.setDelegate(gopro);
-    gopro.open();
     $.mainView = new MainView(gopro, screenCoordinates);
 
     return (
@@ -58,6 +59,5 @@ class GarminGoProDatafieldApp extends Application.AppBase {
 
   function onSettingsChanged() {
     $.mainView.handleSettingsChanged();
-    WatchUi.requestUpdate();
   }
 }
