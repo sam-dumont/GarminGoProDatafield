@@ -966,8 +966,20 @@ class GoPro extends Ble.BleDelegate {
       asleep = false;
       self.device = device;
       hasBeenConnected = true;
+      // BLE link is up but we haven't yet enabled the COMMAND/QUERY/SETTINGS
+      // notification descriptors. The watchdog will fire if that chain stalls.
+      connectionStatus = STATUS_CONNECTING;
       startConnectingWatchdog();
     } else {
+      // BLE link dropped. Reset to SEARCHING so the UI shows the right state
+      // and the notification-enable flags don't leak into the next session.
+      connectionStatus = STATUS_SEARCHING;
+      commandNotificationsEnabled = false;
+      queryNotificationsEnabled = false;
+      settingsNotificationsEnabled = false;
+      settingsSubscribed = false;
+      presetListFetched = false;
+      stopConnectingWatchdog();
       if (autoReconnect && !asleep) {
         log("Auto-reconnect enabled, attempting to reconnect...");
         shouldConnect = true;

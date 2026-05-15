@@ -6,6 +6,9 @@ base.sourcePath=source;generated_protobuf
 edge840.sourcePath=$(base.sourcePath);layouts-square
 edge840.excludeAnnotations=round
 
+edge850.sourcePath=$(base.sourcePath);layouts-square
+edge850.excludeAnnotations=round
+
 edge1040.sourcePath=$(base.sourcePath);layouts-square
 edge1040.excludeAnnotations=round
 

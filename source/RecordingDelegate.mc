@@ -8,7 +8,7 @@ class RecordingDelegate extends WatchUi.InputDelegate {
   var mainView;
 
   function initialize(gopro, screenCoordinates, mainView) {
-    BehaviorDelegate.initialize();
+    InputDelegate.initialize();
     self.screenCoordinates = screenCoordinates;
     self.gopro = gopro;
     self.mainView = mainView;

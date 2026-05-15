@@ -23,7 +23,7 @@ class MainView extends WatchUi.DataField {
   var keepalive = false;
   var autoStop = false;
 
-  function initialize(gopro as Ble.BleDelegate, screenCoordinates) {
+  function initialize(gopro as GoPro, screenCoordinates) {
     DataField.initialize();
     layout = new Layout(0);
     self.gopro = gopro;
@@ -36,7 +36,6 @@ class MainView extends WatchUi.DataField {
       Application.Properties.getValue("auto_stop"),
       false
     );
-    gopro.parseQueryResponse();
   }
 
   function onPeriodicUpdate() {
@@ -264,8 +263,8 @@ class MainView extends WatchUi.DataField {
         layout.settingsText.setColor(foregroundColor);
         screenCoordinates.touchEnabled = true;
 
-        var modeIcon;
-        var statusIcon;
+        var modeIcon = null;
+        var statusIcon = null;
 
         if (gopro.mode == GoPro.MODE_PHOTO) {
           layout.durationText.setVisible(false);
@@ -486,6 +485,15 @@ class MainView extends WatchUi.DataField {
         height * 0.75,
         modeIcon
       );
+      screenCoordinates.modeButton = [
+        [
+          width * 0.25 - modeIcon.getWidth() / 2,
+          width * 0.25 + modeIcon.getWidth() / 2,
+        ],
+        [height * 0.75, height * 0.75 + modeIcon.getHeight()],
+      ];
+    } else {
+      screenCoordinates.modeButton = [[0, 0], [0, 0]];
     }
     if (statusIcon != null) {
       dc.drawBitmap(
@@ -493,21 +501,16 @@ class MainView extends WatchUi.DataField {
         height * 0.75,
         statusIcon
       );
+      screenCoordinates.recordButton = [
+        [
+          width * 0.75 - statusIcon.getWidth() / 2,
+          width * 0.75 + statusIcon.getWidth() / 2,
+        ],
+        [height * 0.75, height * 0.75 + statusIcon.getHeight()],
+      ];
+    } else {
+      screenCoordinates.recordButton = [[0, 0], [0, 0]];
     }
-    screenCoordinates.modeButton = [
-      [
-        width * 0.25 - modeIcon.getWidth() / 2,
-        width * 0.25 + modeIcon.getWidth() / 2,
-      ],
-      [height * 0.75, height * 0.75 + modeIcon.getHeight()],
-    ];
-    screenCoordinates.recordButton = [
-      [
-        width * 0.75 - statusIcon.getWidth() / 2,
-        width * 0.75 + statusIcon.getWidth() / 2,
-      ],
-      [height * 0.75, height * 0.75 + statusIcon.getHeight()],
-    ];
     if (!gopro.recording) {
       if (!gopro.firstPreset) {
         screenCoordinates.prevPresetButton = [
@@ -587,6 +590,15 @@ class MainView extends WatchUi.DataField {
         height * 0.73,
         modeIcon
       );
+      screenCoordinates.modeButton = [
+        [
+          width * 0.35 - modeIcon.getWidth() / 2,
+          width * 0.35 + modeIcon.getWidth() / 2,
+        ],
+        [height * 0.73, height * 0.73 + modeIcon.getHeight()],
+      ];
+    } else {
+      screenCoordinates.modeButton = [[0, 0], [0, 0]];
     }
     if (statusIcon != null) {
       dc.drawBitmap(
@@ -594,21 +606,16 @@ class MainView extends WatchUi.DataField {
         height * 0.73,
         statusIcon
       );
+      screenCoordinates.recordButton = [
+        [
+          width * 0.65 - statusIcon.getWidth() / 2,
+          width * 0.65 + statusIcon.getWidth() / 2,
+        ],
+        [height * 0.73, height * 0.73 + statusIcon.getHeight()],
+      ];
+    } else {
+      screenCoordinates.recordButton = [[0, 0], [0, 0]];
     }
-    screenCoordinates.modeButton = [
-      [
-        width * 0.35 - modeIcon.getWidth() / 2,
-        width * 0.35 + modeIcon.getWidth() / 2,
-      ],
-      [height * 0.73, height * 0.73 + modeIcon.getHeight()],
-    ];
-    screenCoordinates.recordButton = [
-      [
-        width * 0.65 - statusIcon.getWidth() / 2,
-        width * 0.65 + statusIcon.getWidth() / 2,
-      ],
-      [height * 0.73, height * 0.73 + statusIcon.getHeight()],
-    ];
     if (!gopro.recording) {
       if (!gopro.firstPreset) {
         screenCoordinates.prevPresetButton = [
