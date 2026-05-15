@@ -237,13 +237,13 @@ module EnumPresetTitle {
 }
 
 class NotifyPresetStatus {
-  var f1;
+  var f1 as Lang.Array<PresetGroup>;
 
   function initialize() {
     f1 = [];
   }
 
-  function decode(data) {
+  function decode(data as Lang.ByteArray or ProtobufLib.Decoder) as Void {
     var d = data instanceof ProtobufLib.Decoder ? data : new ProtobufLib.Decoder(data);
     f1 = [];
     while (d.remaining() > 0) {
@@ -263,7 +263,7 @@ class NotifyPresetStatus {
     }
   }
 
-  function encode() {
+  function encode() as Lang.ByteArray {
     var buf = []b;
     for (var i = 0; i < f1.size(); i++) {
       ProtobufLib.encodeVarint(buf, 10);
@@ -274,23 +274,23 @@ class NotifyPresetStatus {
     return buf;
   }
 
-  function getPresetGroupArray() { return f1; }
+  function getPresetGroupArray() as Lang.Array<PresetGroup> { return f1; }
 
-  function setPresetGroupArray(v) { f1 = v; }
+  function setPresetGroupArray(v as Lang.Array<PresetGroup>) as Void { f1 = v; }
 }
 
 class Preset {
-  var f1;
-  var f2;
-  var f3;
-  var f4;
-  var f5;
-  var f6;
-  var f7;
-  var f8;
-  var f9;
-  var f10;
-  var f11;
+  var f1 as Lang.Number;
+  var f2 as Lang.Number;
+  var f3 as Lang.Number;
+  var f4 as Lang.Number;
+  var f5 as Lang.Boolean;
+  var f6 as Lang.Number;
+  var f7 as Lang.Array<PresetSetting>;
+  var f8 as Lang.Boolean;
+  var f9 as Lang.Boolean;
+  var f10 as Lang.String;
+  var f11 as Lang.Boolean;
 
   function initialize() {
     f1 = 0;
@@ -306,7 +306,7 @@ class Preset {
     f11 = false;
   }
 
-  function decode(data) {
+  function decode(data as Lang.ByteArray or ProtobufLib.Decoder) as Void {
     var d = data instanceof ProtobufLib.Decoder ? data : new ProtobufLib.Decoder(data);
     f7 = [];
     while (d.remaining() > 0) {
@@ -356,7 +356,7 @@ class Preset {
     }
   }
 
-  function encode() {
+  function encode() as Lang.ByteArray {
     var buf = []b;
     if (f1 != 0) {
       ProtobufLib.encodeVarint(buf, 8);
@@ -398,7 +398,7 @@ class Preset {
     }
     if (f10 != "") {
       ProtobufLib.encodeVarint(buf, 82);
-      var bytes = StringUtil.convertEncodedString(f10, {:fromRepresentation => StringUtil.REPRESENTATION_STRING_PLAIN_TEXT, :toRepresentation => StringUtil.REPRESENTATION_BYTE_ARRAY, :encoding => StringUtil.CHAR_ENCODING_UTF8});
+      var bytes = StringUtil.convertEncodedString(f10, {:fromRepresentation => StringUtil.REPRESENTATION_STRING_PLAIN_TEXT, :toRepresentation => StringUtil.REPRESENTATION_BYTE_ARRAY, :encoding => StringUtil.CHAR_ENCODING_UTF8}) as Lang.ByteArray;
       ProtobufLib.encodeVarint(buf, bytes.size());
       buf.addAll(bytes);
     }
@@ -409,35 +409,35 @@ class Preset {
     return buf;
   }
 
-  function getId() { return f1; }
-  function getMode() { return f2; }
-  function getTitleId() { return f3; }
-  function getTitleNumber() { return f4; }
-  function getUserDefined() { return f5; }
-  function getIcon() { return f6; }
-  function getSettingArray() { return f7; }
-  function getIsModified() { return f8; }
-  function getIsFixed() { return f9; }
-  function getCustomName() { return f10; }
-  function getIsVisible() { return f11; }
+  function getId() as Lang.Number { return f1; }
+  function getMode() as Lang.Number { return f2; }
+  function getTitleId() as Lang.Number { return f3; }
+  function getTitleNumber() as Lang.Number { return f4; }
+  function getUserDefined() as Lang.Boolean { return f5; }
+  function getIcon() as Lang.Number { return f6; }
+  function getSettingArray() as Lang.Array<PresetSetting> { return f7; }
+  function getIsModified() as Lang.Boolean { return f8; }
+  function getIsFixed() as Lang.Boolean { return f9; }
+  function getCustomName() as Lang.String { return f10; }
+  function getIsVisible() as Lang.Boolean { return f11; }
 
-  function setId(v) { f1 = v; }
-  function setMode(v) { f2 = v; }
-  function setTitleId(v) { f3 = v; }
-  function setTitleNumber(v) { f4 = v; }
-  function setUserDefined(v) { f5 = v; }
-  function setIcon(v) { f6 = v; }
-  function setSettingArray(v) { f7 = v; }
-  function setIsModified(v) { f8 = v; }
-  function setIsFixed(v) { f9 = v; }
-  function setCustomName(v) { f10 = v; }
-  function setIsVisible(v) { f11 = v; }
+  function setId(v as Lang.Number) as Void { f1 = v; }
+  function setMode(v as Lang.Number) as Void { f2 = v; }
+  function setTitleId(v as Lang.Number) as Void { f3 = v; }
+  function setTitleNumber(v as Lang.Number) as Void { f4 = v; }
+  function setUserDefined(v as Lang.Boolean) as Void { f5 = v; }
+  function setIcon(v as Lang.Number) as Void { f6 = v; }
+  function setSettingArray(v as Lang.Array<PresetSetting>) as Void { f7 = v; }
+  function setIsModified(v as Lang.Boolean) as Void { f8 = v; }
+  function setIsFixed(v as Lang.Boolean) as Void { f9 = v; }
+  function setCustomName(v as Lang.String) as Void { f10 = v; }
+  function setIsVisible(v as Lang.Boolean) as Void { f11 = v; }
 }
 
 class RequestCustomPresetUpdate {
-  var f1;
-  var f2;
-  var f3;
+  var f1 as Lang.Number;
+  var f2 as Lang.String;
+  var f3 as Lang.Number;
 
   function initialize() {
     f1 = 0;
@@ -445,7 +445,7 @@ class RequestCustomPresetUpdate {
     f3 = 0;
   }
 
-  function decode(data) {
+  function decode(data as Lang.ByteArray or ProtobufLib.Decoder) as Void {
     var d = data instanceof ProtobufLib.Decoder ? data : new ProtobufLib.Decoder(data);
     while (d.remaining() > 0) {
       var tag = d.varint();
@@ -468,7 +468,7 @@ class RequestCustomPresetUpdate {
     }
   }
 
-  function encode() {
+  function encode() as Lang.ByteArray {
     var buf = []b;
     if (f1 != 0) {
       ProtobufLib.encodeVarint(buf, 8);
@@ -476,7 +476,7 @@ class RequestCustomPresetUpdate {
     }
     if (f2 != "") {
       ProtobufLib.encodeVarint(buf, 18);
-      var bytes = StringUtil.convertEncodedString(f2, {:fromRepresentation => StringUtil.REPRESENTATION_STRING_PLAIN_TEXT, :toRepresentation => StringUtil.REPRESENTATION_BYTE_ARRAY, :encoding => StringUtil.CHAR_ENCODING_UTF8});
+      var bytes = StringUtil.convertEncodedString(f2, {:fromRepresentation => StringUtil.REPRESENTATION_STRING_PLAIN_TEXT, :toRepresentation => StringUtil.REPRESENTATION_BYTE_ARRAY, :encoding => StringUtil.CHAR_ENCODING_UTF8}) as Lang.ByteArray;
       ProtobufLib.encodeVarint(buf, bytes.size());
       buf.addAll(bytes);
     }
@@ -487,25 +487,25 @@ class RequestCustomPresetUpdate {
     return buf;
   }
 
-  function getTitleId() { return f1; }
-  function getCustomName() { return f2; }
-  function getIconId() { return f3; }
+  function getTitleId() as Lang.Number { return f1; }
+  function getCustomName() as Lang.String { return f2; }
+  function getIconId() as Lang.Number { return f3; }
 
-  function setTitleId(v) { f1 = v; }
-  function setCustomName(v) { f2 = v; }
-  function setIconId(v) { f3 = v; }
+  function setTitleId(v as Lang.Number) as Void { f1 = v; }
+  function setCustomName(v as Lang.String) as Void { f2 = v; }
+  function setIconId(v as Lang.Number) as Void { f3 = v; }
 }
 
 class RequestPresetSetVisibility {
-  var f1;
-  var f2;
+  var f1 as Lang.Number;
+  var f2 as Lang.Boolean;
 
   function initialize() {
     f1 = 0;
     f2 = false;
   }
 
-  function decode(data) {
+  function decode(data as Lang.ByteArray or ProtobufLib.Decoder) as Void {
     var d = data instanceof ProtobufLib.Decoder ? data : new ProtobufLib.Decoder(data);
     while (d.remaining() > 0) {
       var tag = d.varint();
@@ -525,7 +525,7 @@ class RequestPresetSetVisibility {
     }
   }
 
-  function encode() {
+  function encode() as Lang.ByteArray {
     var buf = []b;
     if (f1 != 0) {
       ProtobufLib.encodeVarint(buf, 8);
@@ -538,21 +538,21 @@ class RequestPresetSetVisibility {
     return buf;
   }
 
-  function getId() { return f1; }
-  function getVisible() { return f2; }
+  function getId() as Lang.Number { return f1; }
+  function getVisible() as Lang.Boolean { return f2; }
 
-  function setId(v) { f1 = v; }
-  function setVisible(v) { f2 = v; }
+  function setId(v as Lang.Number) as Void { f1 = v; }
+  function setVisible(v as Lang.Boolean) as Void { f2 = v; }
 }
 
 class PresetGroup {
-  var f1;
-  var f2;
-  var f3;
-  var f4;
-  var f5;
-  var f6;
-  var f7;
+  var f1 as Lang.Number;
+  var f2 as Lang.Array<Preset>;
+  var f3 as Lang.Boolean;
+  var f4 as Lang.Number;
+  var f5 as Lang.Array<Lang.Number>;
+  var f6 as Lang.String;
+  var f7 as Lang.Number;
 
   function initialize() {
     f1 = 0;
@@ -564,7 +564,7 @@ class PresetGroup {
     f7 = 0;
   }
 
-  function decode(data) {
+  function decode(data as Lang.ByteArray or ProtobufLib.Decoder) as Void {
     var d = data instanceof ProtobufLib.Decoder ? data : new ProtobufLib.Decoder(data);
     f2 = [];
     f5 = [];
@@ -610,7 +610,7 @@ class PresetGroup {
     }
   }
 
-  function encode() {
+  function encode() as Lang.ByteArray {
     var buf = []b;
     if (f1 != 0) {
       ProtobufLib.encodeVarint(buf, 8);
@@ -636,7 +636,7 @@ class PresetGroup {
     }
     if (f6 != "") {
       ProtobufLib.encodeVarint(buf, 50);
-      var bytes = StringUtil.convertEncodedString(f6, {:fromRepresentation => StringUtil.REPRESENTATION_STRING_PLAIN_TEXT, :toRepresentation => StringUtil.REPRESENTATION_BYTE_ARRAY, :encoding => StringUtil.CHAR_ENCODING_UTF8});
+      var bytes = StringUtil.convertEncodedString(f6, {:fromRepresentation => StringUtil.REPRESENTATION_STRING_PLAIN_TEXT, :toRepresentation => StringUtil.REPRESENTATION_BYTE_ARRAY, :encoding => StringUtil.CHAR_ENCODING_UTF8}) as Lang.ByteArray;
       ProtobufLib.encodeVarint(buf, bytes.size());
       buf.addAll(bytes);
     }
@@ -647,27 +647,27 @@ class PresetGroup {
     return buf;
   }
 
-  function getId() { return f1; }
-  function getPresetArray() { return f2; }
-  function getCanAddPreset() { return f3; }
-  function getIcon() { return f4; }
-  function getModeArray() { return f5; }
-  function getCustomName() { return f6; }
-  function getActivePresetId() { return f7; }
+  function getId() as Lang.Number { return f1; }
+  function getPresetArray() as Lang.Array<Preset> { return f2; }
+  function getCanAddPreset() as Lang.Boolean { return f3; }
+  function getIcon() as Lang.Number { return f4; }
+  function getModeArray() as Lang.Array<Lang.Number> { return f5; }
+  function getCustomName() as Lang.String { return f6; }
+  function getActivePresetId() as Lang.Number { return f7; }
 
-  function setId(v) { f1 = v; }
-  function setPresetArray(v) { f2 = v; }
-  function setCanAddPreset(v) { f3 = v; }
-  function setIcon(v) { f4 = v; }
-  function setModeArray(v) { f5 = v; }
-  function setCustomName(v) { f6 = v; }
-  function setActivePresetId(v) { f7 = v; }
+  function setId(v as Lang.Number) as Void { f1 = v; }
+  function setPresetArray(v as Lang.Array<Preset>) as Void { f2 = v; }
+  function setCanAddPreset(v as Lang.Boolean) as Void { f3 = v; }
+  function setIcon(v as Lang.Number) as Void { f4 = v; }
+  function setModeArray(v as Lang.Array<Lang.Number>) as Void { f5 = v; }
+  function setCustomName(v as Lang.String) as Void { f6 = v; }
+  function setActivePresetId(v as Lang.Number) as Void { f7 = v; }
 }
 
 class PresetSetting {
-  var f1;
-  var f2;
-  var f3;
+  var f1 as Lang.Number;
+  var f2 as Lang.Number;
+  var f3 as Lang.Boolean;
 
   function initialize() {
     f1 = 0;
@@ -675,7 +675,7 @@ class PresetSetting {
     f3 = false;
   }
 
-  function decode(data) {
+  function decode(data as Lang.ByteArray or ProtobufLib.Decoder) as Void {
     var d = data instanceof ProtobufLib.Decoder ? data : new ProtobufLib.Decoder(data);
     while (d.remaining() > 0) {
       var tag = d.varint();
@@ -698,7 +698,7 @@ class PresetSetting {
     }
   }
 
-  function encode() {
+  function encode() as Lang.ByteArray {
     var buf = []b;
     if (f1 != 0) {
       ProtobufLib.encodeVarint(buf, 8);
@@ -715,13 +715,13 @@ class PresetSetting {
     return buf;
   }
 
-  function getId() { return f1; }
-  function getValue() { return f2; }
-  function getIsCaption() { return f3; }
+  function getId() as Lang.Number { return f1; }
+  function getValue() as Lang.Number { return f2; }
+  function getIsCaption() as Lang.Boolean { return f3; }
 
-  function setId(v) { f1 = v; }
-  function setValue(v) { f2 = v; }
-  function setIsCaption(v) { f3 = v; }
+  function setId(v as Lang.Number) as Void { f1 = v; }
+  function setValue(v as Lang.Number) as Void { f2 = v; }
+  function setIsCaption(v as Lang.Boolean) as Void { f3 = v; }
 }
 
 }

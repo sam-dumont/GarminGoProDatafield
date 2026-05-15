@@ -12,11 +12,11 @@ module ProtobufLib {
   // Use subDecoder() for nested message decoding to share the parent's
   // backing ByteArray instead of slicing.
   class Decoder {
-    private var data;
-    private var pos;
-    private var limit;
+    private var data as Lang.ByteArray;
+    private var pos as Lang.Number;
+    private var limit as Lang.Number;
 
-    function initialize(data) {
+    function initialize(data as Lang.ByteArray) {
       self.data = data;
       self.pos = 0;
       self.limit = data.size();
@@ -24,20 +24,22 @@ module ProtobufLib {
 
     // Reconfigure this Decoder to view a sub-range of the same backing
     // ByteArray. Used by subDecoder() to allow zero-copy nested decode.
-    function setRange(start, limit) {
+    function setRange(start as Lang.Number, limit as Lang.Number) as Void {
       self.pos = start;
       self.limit = limit;
     }
 
-    function remaining() {
+    function remaining() as Lang.Number {
       return limit - pos;
     }
 
-    function position() {
+    function position() as Lang.Number {
       return pos;
     }
 
-    function varint() {
+    // Decode a varint as Number. Use varintLong() for 64-bit-sized fields
+    // (int64/uint64) — this 32-bit form silently truncates above 32 bits.
+    function varint() as Lang.Number {
       var result = 0;
       var shift = 0;
       var b;
@@ -50,7 +52,22 @@ module ProtobufLib {
       return result;
     }
 
-    function skipField(wireType) {
+    // Decode a varint as Long. Use this for int64/uint64-typed fields so the
+    // upper 32 bits are preserved.
+    function varintLong() as Lang.Long {
+      var result = 0l;
+      var shift = 0;
+      var b;
+      do {
+        b = data[pos];
+        pos++;
+        result |= (b.toLong() & 0x7Fl) << shift;
+        shift += 7;
+      } while (b & 0x80);
+      return result;
+    }
+
+    function skipField(wireType as Lang.Number) as Void {
       if (wireType == 0) {            // varint
         while ((data[pos] & 0x80) != 0) { pos++; }
         pos++;
@@ -65,7 +82,7 @@ module ProtobufLib {
 
     // Read a length-prefixed byte range as a fresh ByteArray.
     // Use subDecoder() instead when the bytes are a nested protobuf message.
-    function bytes() {
+    function bytes() as Lang.ByteArray {
       var len = varint();
       var b = data.slice(pos, pos + len);
       pos += len;
@@ -74,13 +91,13 @@ module ProtobufLib {
 
     // Read a length-prefixed byte range and decode as a UTF-8 string.
     // Avoids the char-array-build path that the free decodeVarint loop used.
-    function string() {
+    function string() as Lang.String {
       var len = varint();
       var s = StringUtil.convertEncodedString(
         data.slice(pos, pos + len),
         {:fromRepresentation => StringUtil.REPRESENTATION_BYTE_ARRAY,
          :toRepresentation => StringUtil.REPRESENTATION_STRING_PLAIN_TEXT,
-         :encoding => StringUtil.CHAR_ENCODING_UTF8});
+         :encoding => StringUtil.CHAR_ENCODING_UTF8}) as Lang.String;
       pos += len;
       return s;
     }
@@ -88,7 +105,7 @@ module ProtobufLib {
     // Return a Decoder bounded over the next length-prefixed sub-range,
     // sharing the parent's backing ByteArray (no slice/copy). Advances the
     // parent past the sub-range.
-    function subDecoder() {
+    function subDecoder() as Decoder {
       var len = varint();
       var sub = new Decoder(data);
       sub.setRange(pos, pos + len);
@@ -96,16 +113,16 @@ module ProtobufLib {
       return sub;
     }
 
-    function float32() {
+    function float32() as Lang.Float {
       var b = data.slice(pos, pos + 4);
-      var v = b.decodeNumber(Lang.NUMBER_FORMAT_FLOAT, {:endianness => Lang.ENDIAN_LITTLE});
+      var v = b.decodeNumber(Lang.NUMBER_FORMAT_FLOAT, {:endianness => Lang.ENDIAN_LITTLE}) as Lang.Float;
       pos += 4;
       return v;
     }
 
     // Read 64-bit double (delegates to the free decodeFloat64 for the
     // bit-twiddling, then advances pos).
-    function float64() {
+    function float64() as Lang.Double {
       var v = ProtobufLib.decodeFloat64(data, pos);
       pos += 8;
       return v;
@@ -114,9 +131,8 @@ module ProtobufLib {
 
   // ---- Free functions (kept for backward compat with hand-written code) ----
 
-  // Decode a varint from the data starting at pos
-  // Returns [value, new_pos]
-  function decodeVarint(data, pos) {
+  // Decode a varint from the data starting at pos. Returns [value, new_pos].
+  function decodeVarint(data as Lang.ByteArray, pos as Lang.Number) as [Lang.Number, Lang.Number] {
     var result = 0;
     var shift = 0;
     var b;
@@ -129,17 +145,22 @@ module ProtobufLib {
     return [result, pos];
   }
 
-  // Encode a varint value into the buffer
-  function encodeVarint(buf, val) {
+  // Encode a varint value into the buffer. Accepts Number or Long; bytes
+  // are written via .toNumber() because ByteArray.add() rejects Long.
+  function encodeVarint(buf as Lang.ByteArray, val as Lang.Number or Lang.Long) as Void {
     while (val > 0x7F) {
-      buf.add(0x80 | (val & 0x7F));
+      buf.add((0x80 | (val & 0x7F)).toNumber());
       val >>= 7;
+      // Mask off sign-extended bits when shifting a Long.
+      if (val instanceof Lang.Long) {
+        val &= 0x01ffffffffffffffl;
+      }
     }
-    buf.add(val);
+    buf.add(val.toNumber());
   }
 
-  // Skip a field based on its wire type
-  function skipField(data, pos, wireType) {
+  // Skip a field based on its wire type. Returns the new position.
+  function skipField(data as Lang.ByteArray, pos as Lang.Number, wireType as Lang.Number) as Lang.Number {
     switch (wireType) {
       case 0: // Varint
         while (data[pos] & 0x80) { pos++; }
@@ -159,44 +180,41 @@ module ProtobufLib {
     return pos;
   }
 
-  // Decode a fixed 32-bit value
-  function decodeFixed32(data, pos) {
+  // Decode a fixed 32-bit value.
+  function decodeFixed32(data as Lang.ByteArray, pos as Lang.Number) as Lang.Number {
     return data[pos] | (data[pos + 1] << 8) | (data[pos + 2] << 16) | (data[pos + 3] << 24);
   }
 
-  // Decode a fixed 64-bit value (returns as two 32-bit parts)
-  function decodeFixed64(data, pos) {
+  // Decode a fixed 64-bit value (returns as two 32-bit parts: [low, high]).
+  function decodeFixed64(data as Lang.ByteArray, pos as Lang.Number) as [Lang.Number, Lang.Number] {
     var low = decodeFixed32(data, pos);
     var high = decodeFixed32(data, pos + 4);
     return [low, high];
   }
 
-  // Encode a fixed 32-bit value
-  function encodeFixed32(buf, val) {
+  // Encode a fixed 32-bit value.
+  function encodeFixed32(buf as Lang.ByteArray, val as Lang.Number) as Void {
     buf.add(val & 0xFF);
     buf.add((val >> 8) & 0xFF);
     buf.add((val >> 16) & 0xFF);
     buf.add((val >> 24) & 0xFF);
   }
 
-  // Encode a fixed 64-bit value (from two 32-bit parts)
-  function encodeFixed64(buf, low, high) {
+  // Encode a fixed 64-bit value (from two 32-bit parts).
+  function encodeFixed64(buf as Lang.ByteArray, low as Lang.Number, high as Lang.Number) as Void {
     encodeFixed32(buf, low);
     encodeFixed32(buf, high);
   }
 
-  // Decode IEEE 754 float32
-  function decodeFloat32(data, pos) {
-    // Use MonkeyC's native ByteArray decodeNumber for IEEE 754 float
+  // Decode IEEE 754 float32.
+  function decodeFloat32(data as Lang.ByteArray, pos as Lang.Number) as Lang.Float {
     var bytes = data.slice(pos, pos + 4);
-    return bytes.decodeNumber(Lang.NUMBER_FORMAT_FLOAT, {:endianness => Lang.ENDIAN_LITTLE});
+    return bytes.decodeNumber(Lang.NUMBER_FORMAT_FLOAT, {:endianness => Lang.ENDIAN_LITTLE}) as Lang.Float;
   }
 
   // Decode IEEE 754 float64. Monkey C has no NUMBER_FORMAT_DOUBLE, so we
   // reconstruct the value from the raw bit pattern using Math.pow / division.
-  // The previous implementation tried to coerce double bits into float32
-  // bits and had off-by-one shifts that broke even simple round-trips.
-  function decodeFloat64(data, pos) {
+  function decodeFloat64(data as Lang.ByteArray, pos as Lang.Number) as Lang.Double {
     var b0 = data[pos];
     var b1 = data[pos + 1];
     var b2 = data[pos + 2];
@@ -230,8 +248,6 @@ module ProtobufLib {
       return 0.0d;
     }
 
-    // mantissa.toDouble() is exact only up to 2^53; above that we lose bits,
-    // but that's beyond what protobuf serialization can reproduce anyway.
     var fraction = mantissa.toDouble() / Math.pow(2.0d, 52);
     var value;
     if (biasedExp == 0) {
@@ -245,21 +261,19 @@ module ProtobufLib {
   }
 
   // Encode IEEE 754 float32.
-  function encodeFloat32(buf, val) {
+  function encodeFloat32(buf as Lang.ByteArray, val as Lang.Float) as Void {
     var bytes = new [4]b;
     bytes.encodeNumber(val, Lang.NUMBER_FORMAT_FLOAT, {:endianness => Lang.ENDIAN_LITTLE});
     buf.addAll(bytes);
   }
 
-  // Encode IEEE 754 float64. Inverse of decodeFloat64 above. Computes
-  // sign/exponent/mantissa from the value and packs them little-endian.
-  function encodeFloat64(buf, val) {
+  // Encode IEEE 754 float64. Inverse of decodeFloat64.
+  function encodeFloat64(buf as Lang.ByteArray, val as Lang.Double or Lang.Float) as Void {
     // NaN: produce a canonical quiet NaN.
     if (val != val) {
       buf.addAll([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF8, 0x7F]b);
       return;
     }
-    // Zero (Monkey C doesn't reliably distinguish +0.0 from -0.0; emit +0).
     if (val == 0.0d) {
       buf.addAll([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]b);
       return;
@@ -272,12 +286,8 @@ module ProtobufLib {
       absVal = -absVal;
     }
 
-    // Find the unbiased exponent: largest integer k such that 2^k <= absVal.
-    // Math.log returns natural log; divide by ln(2) for log2.
     var unbiasedExp = Math.floor(Math.log(absVal, Math.E) / Math.log(2.0d, Math.E)).toNumber();
 
-    // Compute the fractional part: absVal / 2^unbiasedExp - 1 should be in [0, 1).
-    // Adjust for floating-point edge cases (frac may be slightly >=1 or <0).
     var scale = Math.pow(2.0d, unbiasedExp);
     var fraction = absVal / scale - 1.0d;
     if (fraction >= 1.0d) {
@@ -291,39 +301,36 @@ module ProtobufLib {
     var biasedExp = unbiasedExp + 1023;
     var mantissa = (fraction * Math.pow(2.0d, 52)).toLong();
 
-    // Pack low 48 bits of mantissa into bytes 0-5 (LE).
     buf.add((mantissa & 0xFF).toNumber());
     buf.add(((mantissa >> 8) & 0xFF).toNumber());
     buf.add(((mantissa >> 16) & 0xFF).toNumber());
     buf.add(((mantissa >> 24) & 0xFF).toNumber());
     buf.add(((mantissa >> 32) & 0xFF).toNumber());
     buf.add(((mantissa >> 40) & 0xFF).toNumber());
-    // Byte 6: high 4 bits of mantissa | low 4 bits of biased exponent.
     var mantHi = ((mantissa >> 48) & 0x0F).toNumber();
     buf.add(mantHi | ((biasedExp & 0x0F) << 4));
-    // Byte 7: sign | high 7 bits of biased exponent.
     buf.add((signBit << 7) | ((biasedExp >> 4) & 0x7F));
   }
 
-  // Encode a tag (field number and wire type)
-  function encodeTag(buf, fieldNum, wireType) {
+  // Encode a tag (field number and wire type).
+  function encodeTag(buf as Lang.ByteArray, fieldNum as Lang.Number, wireType as Lang.Number) as Void {
     encodeVarint(buf, (fieldNum << 3) | wireType);
   }
 
-  // Decode a length-delimited field (string or bytes)
-  function decodeLengthDelimited(data, pos) {
+  // Decode a length-delimited field. Returns [bytes, new_pos].
+  function decodeLengthDelimited(data as Lang.ByteArray, pos as Lang.Number) as [Lang.ByteArray, Lang.Number] {
     var lenResult = decodeVarint(data, pos);
     var len = lenResult[0];
     pos = lenResult[1];
     return [data.slice(pos, pos + len), pos + len];
   }
 
-  // Encode a length-delimited field (string or bytes)
-  function encodeLengthDelimited(buf, fieldNum, data) {
+  // Encode a length-delimited field (string or bytes).
+  function encodeLengthDelimited(buf as Lang.ByteArray, fieldNum as Lang.Number, data as Lang.String or Lang.ByteArray) as Void {
     encodeTag(buf, fieldNum, 2);
-    if (data instanceof Toybox.Lang.String) {
-      var strBytes = StringUtil.convertEncodedString(data, {:fromRepresentation => StringUtil.REPRESENTATION_STRING_PLAIN_TEXT, 
-                                                            :toRepresentation => StringUtil.REPRESENTATION_BYTE_ARRAY});
+    if (data instanceof Lang.String) {
+      var strBytes = StringUtil.convertEncodedString(data, {:fromRepresentation => StringUtil.REPRESENTATION_STRING_PLAIN_TEXT,
+                                                            :toRepresentation => StringUtil.REPRESENTATION_BYTE_ARRAY}) as Lang.ByteArray;
       encodeVarint(buf, strBytes.size());
       buf.addAll(strBytes);
     } else {
@@ -332,15 +339,15 @@ module ProtobufLib {
     }
   }
 
-  // Convert string to byte array
-  function stringToBytes(str) {
-    return StringUtil.convertEncodedString(str, {:fromRepresentation => StringUtil.REPRESENTATION_STRING_PLAIN_TEXT, 
-                                                  :toRepresentation => StringUtil.REPRESENTATION_BYTE_ARRAY});
+  // Convert string to byte array.
+  function stringToBytes(str as Lang.String) as Lang.ByteArray {
+    return StringUtil.convertEncodedString(str, {:fromRepresentation => StringUtil.REPRESENTATION_STRING_PLAIN_TEXT,
+                                                  :toRepresentation => StringUtil.REPRESENTATION_BYTE_ARRAY}) as Lang.ByteArray;
   }
 
-  // Convert byte array to string
-  function bytesToString(bytes) {
+  // Convert byte array to string.
+  function bytesToString(bytes as Lang.ByteArray) as Lang.String {
     return StringUtil.convertEncodedString(bytes, {:fromRepresentation => StringUtil.REPRESENTATION_BYTE_ARRAY,
-                                                    :toRepresentation => StringUtil.REPRESENTATION_STRING_PLAIN_TEXT});
+                                                    :toRepresentation => StringUtil.REPRESENTATION_STRING_PLAIN_TEXT}) as Lang.String;
   }
 }

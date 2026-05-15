@@ -15,10 +15,10 @@ module EnumRegisterPresetStatus {
 }
 
 class RequestGetPresetStatus {
-  var f1;
-  var f2;
-  var f3;
-  var f4;
+  var f1 as Lang.Array<Lang.Number>;
+  var f2 as Lang.Array<Lang.Number>;
+  var f3 as Lang.Boolean;
+  var f4 as Lang.Boolean;
 
   function initialize() {
     f1 = [];
@@ -27,7 +27,7 @@ class RequestGetPresetStatus {
     f4 = false;
   }
 
-  function decode(data) {
+  function decode(data as Lang.ByteArray or ProtobufLib.Decoder) as Void {
     var d = data instanceof ProtobufLib.Decoder ? data : new ProtobufLib.Decoder(data);
     f1 = [];
     f2 = [];
@@ -69,7 +69,7 @@ class RequestGetPresetStatus {
     }
   }
 
-  function encode() {
+  function encode() as Lang.ByteArray {
     var buf = []b;
     for (var i = 0; i < f1.size(); i++) {
       ProtobufLib.encodeVarint(buf, 8);
@@ -90,15 +90,15 @@ class RequestGetPresetStatus {
     return buf;
   }
 
-  function getRegisterPresetStatus() { return f1; }
-  function getUnregisterPresetStatus() { return f2; }
-  function getUseConstantSettingIds() { return f3; }
-  function getIncludeHidden() { return f4; }
+  function getRegisterPresetStatus() as Lang.Array<Lang.Number> { return f1; }
+  function getUnregisterPresetStatus() as Lang.Array<Lang.Number> { return f2; }
+  function getUseConstantSettingIds() as Lang.Boolean { return f3; }
+  function getIncludeHidden() as Lang.Boolean { return f4; }
 
-  function setRegisterPresetStatus(v) { f1 = v; }
-  function setUnregisterPresetStatus(v) { f2 = v; }
-  function setUseConstantSettingIds(v) { f3 = v; }
-  function setIncludeHidden(v) { f4 = v; }
+  function setRegisterPresetStatus(v as Lang.Array<Lang.Number>) as Void { f1 = v; }
+  function setUnregisterPresetStatus(v as Lang.Array<Lang.Number>) as Void { f2 = v; }
+  function setUseConstantSettingIds(v as Lang.Boolean) as Void { f3 = v; }
+  function setIncludeHidden(v as Lang.Boolean) as Void { f4 = v; }
 }
 
 }

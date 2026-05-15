@@ -20,13 +20,13 @@ module EnumResultGeneric {
 }
 
 class ResponseGeneric {
-  var f1;
+  var f1 as Lang.Number;
 
   function initialize() {
     f1 = 0;
   }
 
-  function decode(data) {
+  function decode(data as Lang.ByteArray or ProtobufLib.Decoder) as Void {
     var d = data instanceof ProtobufLib.Decoder ? data : new ProtobufLib.Decoder(data);
     while (d.remaining() > 0) {
       var tag = d.varint();
@@ -43,7 +43,7 @@ class ResponseGeneric {
     }
   }
 
-  function encode() {
+  function encode() as Lang.ByteArray {
     var buf = []b;
     if (f1 != 0) {
       ProtobufLib.encodeVarint(buf, 8);
@@ -52,21 +52,21 @@ class ResponseGeneric {
     return buf;
   }
 
-  function getResult() { return f1; }
+  function getResult() as Lang.Number { return f1; }
 
-  function setResult(v) { f1 = v; }
+  function setResult(v as Lang.Number) as Void { f1 = v; }
 }
 
 class Media {
-  var f1;
-  var f2;
+  var f1 as Lang.String;
+  var f2 as Lang.String;
 
   function initialize() {
     f1 = "";
     f2 = "";
   }
 
-  function decode(data) {
+  function decode(data as Lang.ByteArray or ProtobufLib.Decoder) as Void {
     var d = data instanceof ProtobufLib.Decoder ? data : new ProtobufLib.Decoder(data);
     while (d.remaining() > 0) {
       var tag = d.varint();
@@ -86,28 +86,28 @@ class Media {
     }
   }
 
-  function encode() {
+  function encode() as Lang.ByteArray {
     var buf = []b;
     if (f1 != "") {
       ProtobufLib.encodeVarint(buf, 10);
-      var bytes = StringUtil.convertEncodedString(f1, {:fromRepresentation => StringUtil.REPRESENTATION_STRING_PLAIN_TEXT, :toRepresentation => StringUtil.REPRESENTATION_BYTE_ARRAY, :encoding => StringUtil.CHAR_ENCODING_UTF8});
+      var bytes = StringUtil.convertEncodedString(f1, {:fromRepresentation => StringUtil.REPRESENTATION_STRING_PLAIN_TEXT, :toRepresentation => StringUtil.REPRESENTATION_BYTE_ARRAY, :encoding => StringUtil.CHAR_ENCODING_UTF8}) as Lang.ByteArray;
       ProtobufLib.encodeVarint(buf, bytes.size());
       buf.addAll(bytes);
     }
     if (f2 != "") {
       ProtobufLib.encodeVarint(buf, 18);
-      var bytes = StringUtil.convertEncodedString(f2, {:fromRepresentation => StringUtil.REPRESENTATION_STRING_PLAIN_TEXT, :toRepresentation => StringUtil.REPRESENTATION_BYTE_ARRAY, :encoding => StringUtil.CHAR_ENCODING_UTF8});
+      var bytes = StringUtil.convertEncodedString(f2, {:fromRepresentation => StringUtil.REPRESENTATION_STRING_PLAIN_TEXT, :toRepresentation => StringUtil.REPRESENTATION_BYTE_ARRAY, :encoding => StringUtil.CHAR_ENCODING_UTF8}) as Lang.ByteArray;
       ProtobufLib.encodeVarint(buf, bytes.size());
       buf.addAll(bytes);
     }
     return buf;
   }
 
-  function getFolder() { return f1; }
-  function getFile() { return f2; }
+  function getFolder() as Lang.String { return f1; }
+  function getFile() as Lang.String { return f2; }
 
-  function setFolder(v) { f1 = v; }
-  function setFile(v) { f2 = v; }
+  function setFolder(v as Lang.String) as Void { f1 = v; }
+  function setFile(v as Lang.String) as Void { f2 = v; }
 }
 
 }
