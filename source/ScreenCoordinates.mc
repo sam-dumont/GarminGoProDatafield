@@ -5,27 +5,27 @@ using Toybox.Lang;
 // the tap coordinate against this structure.
 class ScreenCoordinates {
   var touchEnabled as Lang.Boolean = true;
-  var modeButton as Lang.Array<Lang.Array<Lang.Number>> = [
+  var modeButton as Lang.Array<Lang.Array<Lang.Numeric>> = [
     [0, 0],
     [0, 0],
   ];
-  var recordButton as Lang.Array<Lang.Array<Lang.Number>> = [
+  var recordButton as Lang.Array<Lang.Array<Lang.Numeric>> = [
     [0, 0],
     [0, 0],
   ];
-  var connectButton as Lang.Array<Lang.Array<Lang.Number>> = [
+  var connectButton as Lang.Array<Lang.Array<Lang.Numeric>> = [
     [0, 0],
     [0, 0],
   ];
-  var nextPresetButton as Lang.Array<Lang.Array<Lang.Number>> = [
+  var nextPresetButton as Lang.Array<Lang.Array<Lang.Numeric>> = [
     [0, 0],
     [0, 0],
   ];
-  var prevPresetButton as Lang.Array<Lang.Array<Lang.Number>> = [
+  var prevPresetButton as Lang.Array<Lang.Array<Lang.Numeric>> = [
     [0, 0],
     [0, 0],
   ];
-  var onOffButton as Lang.Array<Lang.Array<Lang.Number>> = [
+  var onOffButton as Lang.Array<Lang.Array<Lang.Numeric>> = [
     [0, 0],
     [0, 0],
   ];

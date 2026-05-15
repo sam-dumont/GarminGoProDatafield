@@ -15,7 +15,7 @@ class RecordingDelegate extends WatchUi.InputDelegate {
   }
 
   // buttonCoordinates is [[xMin, xMax], [yMin, yMax]] — see ScreenCoordinates.
-  function withinBoundaries(coordinates as Lang.Array<Lang.Number>, buttonCoordinates as Lang.Array<Lang.Array<Lang.Number>>) as Lang.Boolean {
+  function withinBoundaries(coordinates as Lang.Array<Lang.Number>, buttonCoordinates as Lang.Array<Lang.Array<Lang.Numeric>>) as Lang.Boolean {
     return (
       coordinates[0] > buttonCoordinates[0][0] &&
       coordinates[0] < buttonCoordinates[0][1] &&

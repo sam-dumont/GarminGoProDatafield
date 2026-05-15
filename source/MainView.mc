@@ -7,88 +7,77 @@ import Toybox.System;
 
 class MainView extends WatchUi.DataField {
   var layout as Layout;
-  var narrowDc;
-  var shortDc;
-  var backgroundColor;
-  var foregroundColor;
-  var screenCoordinates;
-  var tick = 0;
-  var tapTick = 0;
-  var enableDebug = false;
-  var gopro;
-  var altitude = 0;
-  var shouldConnect = false;
-  var drawTap = false;
-  var tapCoordinates = [0, 0];
-  var keepalive = false;
-  var autoStop = false;
-  // Cache for Application.loadResource calls. onUpdate runs at 1 Hz (and
-  // sometimes more during animations) and was previously reloading 6-9
-  // bitmap drawables every single frame — each call hits the resource
-  // system. Cache them lazily on first use.
-  var _bitmapCache as Dictionary = {};
+  var narrowDc as Lang.Boolean = false;
+  var shortDc as Lang.Boolean = false;
+  var backgroundColor as Lang.Number = 0;
+  var foregroundColor as Lang.Number = 0;
+  var screenCoordinates as ScreenCoordinates;
+  var tick as Lang.Number = 0;
+  var tapTick as Lang.Number = 0;
+  var enableDebug as Lang.Boolean = false;
+  var gopro as GoPro;
+  var altitude as Lang.Number = 0;
+  var shouldConnect as Lang.Boolean = false;
+  var drawTap as Lang.Boolean = false;
+  var tapCoordinates as Lang.Array<Lang.Number> = [0, 0];
+  var keepalive as Lang.Boolean = false;
+  var autoStop as Lang.Boolean = false;
+  var _bitmapCache as Lang.Dictionary<Lang.ResourceId, WatchUi.BitmapResource> = {};
 
-  function initialize(gopro as GoPro, screenCoordinates) {
+  function initialize(gopro as GoPro, screenCoordinates as ScreenCoordinates) {
     DataField.initialize();
-    layout = new Layout(0);
     self.gopro = gopro;
     self.screenCoordinates = screenCoordinates;
-    keepalive = (Application.Properties.getValue("keepalive") != null
-      ? Application.Properties.getValue("keepalive")
-      : false) as Lang.Boolean;
-    autoStop = (Application.Properties.getValue("auto_stop") != null
-      ? Application.Properties.getValue("auto_stop")
-      : false) as Lang.Boolean;
+    layout = new Layout(0);
+    var kRaw = Application.Properties.getValue("keepalive");
+    keepalive = (kRaw != null ? kRaw : false) as Lang.Boolean;
+    var aRaw = Application.Properties.getValue("auto_stop");
+    autoStop = (aRaw != null ? aRaw : false) as Lang.Boolean;
   }
 
-  // Cached resource loader. See _bitmapCache comment.
-  private function loadBitmap(rezId) {
-    var cached = _bitmapCache[rezId];
-    if (cached == null) {
-      cached = Application.loadResource(rezId);
-      _bitmapCache[rezId] = cached;
+  private function loadBitmap(rezId as Lang.ResourceId) as WatchUi.BitmapResource {
+    var cached = _bitmapCache.get(rezId);
+    if (cached != null) {
+      return cached;
     }
-    return cached;
+    var loaded = Application.loadResource(rezId) as WatchUi.BitmapResource;
+    _bitmapCache.put(rezId, loaded);
+    return loaded;
   }
 
-  function onHide() {
+  function onHide() as Void {
     DataField.onHide();
   }
 
-  function onLayout(dc as Dc) as Void {
+  function onLayout(dc as Graphics.Dc) as Void {
     dc.setAntiAlias(true);
     narrowDc = dc.getWidth() <= System.getDeviceSettings().screenWidth / 2;
     shortDc = dc.getHeight() < System.getDeviceSettings().screenHeight / 2.5;
   }
 
-  function onTimerStart() {
+  function onTimerStart() as Void {
     if (autoStop && !gopro.recording && gopro.mode != GoPro.MODE_PHOTO) {
       gopro.sendCommand("SHUTTER_ON", null);
     }
   }
 
-  function onTimerResume() {
-    // Connection lifecycle is owned by SensorDelegate + system pairing.
-    // Activity-timer transitions no longer tear down the BLE link.
-  }
+  function onTimerResume() as Void {}
 
-  function onTimerReset() {
-    // See onTimerResume — intentionally empty.
-  }
+  function onTimerReset() as Void {}
 
-  function onTimerStop() {
+  function onTimerStop() as Void {
     if (autoStop && gopro.recording && gopro.mode != GoPro.MODE_PHOTO) {
       gopro.sendCommand("SHUTTER_OFF", null);
     }
   }
 
-  function onTimerPause() {
+  function onTimerPause() as Void {
     if (autoStop && gopro.recording && gopro.mode != GoPro.MODE_PHOTO) {
       gopro.sendCommand("SHUTTER_OFF", null);
     }
   }
 
-  function setTapCoordinates(coordinates) {
+  function setTapCoordinates(coordinates as Lang.Array<Lang.Number>) as Void {
     drawTap = true;
     tapCoordinates = coordinates;
     tapTick = tick;
@@ -116,7 +105,7 @@ class MainView extends WatchUi.DataField {
     }
   }
 
-  function onUpdate(dc as Dc) as Void {
+  function onUpdate(dc as Graphics.Dc) as Void {
     var height = dc.getHeight();
     var width = dc.getWidth();
     var screenHeight = System.getDeviceSettings().screenHeight;
@@ -125,19 +114,16 @@ class MainView extends WatchUi.DataField {
     backgroundColor = DataField.getBackgroundColor();
     foregroundColor = backgroundColor == 16777215 ? 0 : 16777215; //BLACK // WHITE
 
-    // Force connected state in simulation mode for UI testing
     if (gopro.SIMULATION_MODE) {
       gopro.connectionStatus = GoPro.STATUS_CONNECTED;
-      if (gopro.cameraID == null || gopro.cameraID == 0) {
+      if (gopro.cameraID == 0) {
         gopro.cameraID = 1;
       }
       gopro.hasBeenConnected = true;
-      // Remove fake preset injection: rely on real presetGroups
-      // Fallback: if modeId is missing in video mode, use first available
-      if (gopro.presetGroups != null && gopro.presetGroups.presets != null) {
-        var videoPresets = gopro.presetGroups.presets[GoPro.MODE_VIDEO];
-        if (videoPresets != null && videoPresets[gopro.modeId] == null) {
-          // Use first available preset in video mode
+      var pg = gopro.presetGroups;
+      if (pg != null) {
+        var videoPresets = pg.presets.get(GoPro.MODE_VIDEO);
+        if (videoPresets != null && videoPresets.get(gopro.modeId) == null) {
           var keys = videoPresets.keys();
           if (keys.size() > 0) {
             gopro.modeId = keys[0];
@@ -467,18 +453,18 @@ class MainView extends WatchUi.DataField {
     }
   }
 
-  function handleSettingsChanged() {}
+  function handleSettingsChanged() as Void {}
 
   (:square)
   function drawDeviceSpecificUI(
-    dc,
-    width,
-    height,
-    gopro,
-    screenCoordinates,
-    modeIcon,
-    statusIcon
-  ) {
+    dc as Graphics.Dc,
+    width as Lang.Number,
+    height as Lang.Number,
+    gopro as GoPro,
+    screenCoordinates as ScreenCoordinates,
+    modeIcon as WatchUi.BitmapResource?,
+    statusIcon as WatchUi.BitmapResource?
+  ) as Void {
     if (modeIcon != null) {
       dc.drawBitmap(
         width * 0.25 - modeIcon.getWidth() / 2,
@@ -576,14 +562,14 @@ class MainView extends WatchUi.DataField {
 
   (:round)
   function drawDeviceSpecificUI(
-    dc,
-    width,
-    height,
-    gopro,
-    screenCoordinates,
-    modeIcon,
-    statusIcon
-  ) {
+    dc as Graphics.Dc,
+    width as Lang.Number,
+    height as Lang.Number,
+    gopro as GoPro,
+    screenCoordinates as ScreenCoordinates,
+    modeIcon as WatchUi.BitmapResource?,
+    statusIcon as WatchUi.BitmapResource?
+  ) as Void {
     if (modeIcon != null) {
       dc.drawBitmap(
         width * 0.35 - modeIcon.getWidth() / 2,
