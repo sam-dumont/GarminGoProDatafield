@@ -269,6 +269,26 @@ It was removed once SensorDelegate replaced manual entry.)
 
 ---
 
+## Simulator limitations
+
+The Connect IQ simulator doesn't implement the entire `Sensor.SensorDelegate`
+flow end-to-end. In particular:
+
+- `Sensor.notifyPairComplete` may surface a "not implemented" dialog on
+  some device targets (observed on Edge 850 / 1050 simulators with SDK
+  9.1.0). The simulator's sensor list still shows the row as "Paired", but
+  the activity-time path that reads `PAIRED_SCAN_RESULT` may not have
+  anything to read.
+- The simulator's "Add Scan Result" panel populates names/UUIDs but does
+  not actually fire all of the `onConnectedStateChanged(CONNECTED)`
+  notifications a real device would deliver, so the full notification-
+  enable chain (cmd → query → settings) won't run in sim.
+
+To smoke-test the activity-time reconnect path without leaning on the full
+pairing flow, you can synthesize a ScanResult into Storage from the
+simulator's REPL/debug console (or temporarily hardcode it in `onStart`).
+End-to-end validation must happen on real hardware.
+
 ## Native Pairing Simulator Test Plan
 
 Run after any change to `GoPro.mc`, `GoProSensorDelegate.mc`, or

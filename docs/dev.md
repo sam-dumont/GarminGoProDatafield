@@ -137,6 +137,14 @@ For testing the native-pairing + BLE-protocol path without a real GoPro:
 A full simulator test plan lives in
 [technical.md → Native Pairing Simulator Test Plan](technical.md#native-pairing-simulator-test-plan).
 
+**Heads-up:** the simulator doesn't fully implement the `Sensor.SensorDelegate`
+flow — `Sensor.notifyPairComplete` can pop a "not implemented" dialog on
+some targets, and the BLE connect callback chain isn't fully delivered in
+sim. The sensor row will still show "Paired" in the sim's UI even when the
+underlying `PAIRED_SCAN_RESULT` write didn't land. Final validation has to
+happen on real hardware. See [Simulator limitations](technical.md#simulator-limitations)
+for the workarounds.
+
 ## Regenerating the protobuf
 
 `generated_protobuf/*.mc` is produced by `protoc-gen-monkeyc` from
