@@ -43,10 +43,6 @@ class MainView extends WatchUi.DataField {
     );
   }
 
-  function onPeriodicUpdate() {
-    WatchUi.requestUpdate();
-  }
-
   // Cached resource loader. See _bitmapCache comment.
   private function loadBitmap(rezId) {
     var cached = _bitmapCache[rezId];
@@ -200,7 +196,6 @@ class MainView extends WatchUi.DataField {
               gopro.cameraID.format("%04d"),
             ])
           );
-          gopro.onPeriodicUpdate();
         }
       } else {
         layout.durationText.setText(

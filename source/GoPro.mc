@@ -13,7 +13,6 @@ class GoPro extends Ble.BleDelegate {
   const CONTROL_AND_QUERY_SERVICE = Ble.stringToUuid(
     "0000fea6-0000-1000-8000-00805f9b34fb"
   );
-  const PAIR_SERVICE = Ble.stringToUuid("0000FE2C-0000-1000-8000-00805F9B34FB");
   const COMMAND_CHAR = Ble.stringToUuid("B5F90072-aa8d-11e3-9046-0002a5d5c51b");
   const COMMAND_NOTIFICATION = Ble.stringToUuid(
     "B5F90073-aa8d-11e3-9046-0002a5d5c51b"
@@ -46,8 +45,6 @@ class GoPro extends Ble.BleDelegate {
   const FEATURE_TYPE_PRESET = 0xf5;
   const RESPONSE_TYPE_PRESET = 0xf2;
   const NOTIFICATION_TYPE_PRESET = 0xf3;
-  const RESPONSE_TYPE_SHUTTER = 0x01;
-  const RESPONSE_TYPE_KEEPALIVE = 0x5b;
   const RESPONSE_TYPE_SLEEP = 0x05;
 
   enum {
@@ -92,10 +89,6 @@ class GoPro extends Ble.BleDelegate {
   const STATUS_FORMAT = 0x80;
   const STATUS_LIVE_BURST_FORMAT = 0x85;
   const STATUS_BURST_FREQUENCY = 0x93;
-
-  const COMMAND_KEEPALIVE = 0x5b;
-  const COMMAND_SHUTTER = 0x01;
-  const COMMAND_SLEEP = 0x05;
 
   const RES_IDS = {
     1 => "4K",
@@ -212,6 +205,7 @@ class GoPro extends Ble.BleDelegate {
     58 => "Basic",
     59 => "Ultra SloMo",
     60 => "Standard Endurance",
+    61 => "Activity Endurance",
     62 => "Cinematic Endurance",
     63 => "SloMo Endurance",
     64 => "Stationary",
@@ -233,7 +227,7 @@ class GoPro extends Ble.BleDelegate {
     82 => "Standard Quality Video",
     83 => "Basic Quality Video",
     93 => "Highest Quality Video",
-    94 => "Used Defined",
+    94 => "User Defined",
     // Hero 13 / Max 2 additions
     99 => "Standard",
     100 => "HDR",
@@ -384,7 +378,6 @@ class GoPro extends Ble.BleDelegate {
     Application.Properties.getValue("auto_reconnect"),
     false
   );
-  var searchingStartTime = null;
   var connectingWatchdog as Timer.Timer? = null;
 
   const SIMULATION_MODE = false; // Set to true to enable simulation mode
@@ -528,78 +521,6 @@ class GoPro extends Ble.BleDelegate {
       desc.requestWrite([0x01, 0x00]b);
       log("Notifications requested for " + characteristic);
     }
-  }
-
-  function onPeriodicUpdate() {
-    // Called regularly by the system (e.g., from MainView)
-    if (connectionStatus == STATUS_SEARCHING && searchingStartTime != null) {
-      var elapsed = (System.getTimer() - searchingStartTime) / 1000; // seconds
-      if (elapsed > 15) {
-        log("Search timed out after 15s, resetting connection");
-        // close();
-        searchingStartTime = null;
-      }
-    }
-  }
-
-  // Resets all GoPro state variables to their default values except profile registration
-  private function _resetState() {
-    // Command/response queues
-    commandResponse = new [0]b;
-    commandResponseQueue = [];
-    flatModeId = 0;
-    recording = false;
-    recordingDuration = 0;
-    remainingPhotos = 3600;
-    remainingTime = 3600;
-    remainingTimeDelta = 0;
-    remainingTimelapse = 3600;
-    resolution = 1;
-    settings = "4K | 30 | L+";
-    settingsNotificationsEnabled = false;
-    settingsSubscribed = false;
-    shouldConnect = false;
-    timeLapseSpeed = 0;
-    timeWarpSpeed = 0;
-    lastPreset = false;
-    firstPreset = false;
-    foundCameraIDs = [];
-    seenDevices = [];
-    pairingDevice = null;
-    hasBeenConnected = false;
-    autoReconnect = Util.replaceNull(
-      Application.Properties.getValue("auto_reconnect"),
-      false
-    );
-    searchingStartTime = null;
-    commandQueue = [];
-    sendingCommand = false;
-    batteryLife = 100;
-    burstFrequency = 0;
-    queryBytesRemaining = 0;
-    commandBytesRemaining = 0;
-    // cameraID is persistent, do not reset
-    commandNotificationsEnabled = false;
-    currentPreset = null;
-    // device is handled in close(), do not reset here
-    format = 0;
-    fov = 0;
-    fps = 5;
-    lens_121 = 0;
-    lens_122 = 0;
-    lens_123 = 0;
-    liveBurstFormat = 0;
-    mode = GoPro.MODE_VIDEO;
-    modeId = 9;
-    modeName = "Standard";
-    nightLapseSpeed = 3601;
-    nightPhotoShutter = 0;
-    presetGroups = new PresetGroups(null);
-    presetListFetched = false;
-    // profileRegistered is NOT reset
-    queryNotificationsEnabled = false;
-    queryResponse = new [0]b;
-    queryResponsesQueue = [];
   }
 
   function parseQueryResponse() {
@@ -1024,10 +945,6 @@ class GoPro extends Ble.BleDelegate {
         Ble.pairDevice(paired);
       }
     }
-  }
-
-  private function dumpUuids(iter) {
-    for (var x = iter.next(); x != null; x = iter.next()) {}
   }
 
   function accumulateQueryResponses() {

@@ -48,7 +48,6 @@ class GarminGoProDatafieldApp extends Application.AppBase {
   }
 
   function getInitialView() as [WatchUi.Views] or [WatchUi.Views, WatchUi.InputDelegates] {
-    Application.Storage.setValue("scanResult", null);
     if (Application.Storage.getValue("lastPresetGroupUploaded") == null) {
       Application.Storage.setValue("lastPresetGroupUploaded", false);
     }
