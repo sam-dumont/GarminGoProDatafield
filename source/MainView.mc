@@ -85,6 +85,7 @@ class MainView extends WatchUi.DataField {
     shouldConnect = gopro.shouldConnect;
     gopro.accumulateQueryResponses();
     gopro.accumulateCommandResponses();
+    gopro.tickConnectingWatchdog();
     if (gopro.presetGroups != null) {
       gopro.presetGroups.parse();
     }

@@ -6,7 +6,6 @@ using Toybox.Application;
 using Toybox.Lang;
 using Toybox.StringUtil;
 using Toybox.Time;
-using Toybox.Timer;
 
 class GoPro extends Ble.BleDelegate {
   function initialize() {
@@ -374,7 +373,13 @@ class GoPro extends Ble.BleDelegate {
   var autoReconnect as Lang.Boolean = (Application.Properties.getValue("auto_reconnect") != null
     ? Application.Properties.getValue("auto_reconnect")
     : false) as Lang.Boolean;
-  var connectingWatchdog as Timer.Timer? = null;
+  // Tick counter for the connecting-phase watchdog. -1 = inactive, 0+ counts
+  // seconds since CONNECTING was entered. MainView.compute() (1 Hz) drives
+  // tickConnectingWatchdog(); we fire onConnectingTimeout at WATCHDOG_TICKS.
+  // Toybox.Timer is not available in DataField app type — this is the
+  // workaround.
+  var connectingWatchdogTicks as Lang.Number = -1;
+  const WATCHDOG_TICKS = 10;
 
   const SIMULATION_MODE = false; // Set to true to enable simulation mode
 
@@ -821,15 +826,20 @@ class GoPro extends Ble.BleDelegate {
   }
 
   function startConnectingWatchdog() as Void {
-    stopConnectingWatchdog();
-    connectingWatchdog = new Timer.Timer();
-    connectingWatchdog.start(method(:onConnectingTimeout), 10000, false);
+    connectingWatchdogTicks = 0;
   }
 
   function stopConnectingWatchdog() as Void {
-    if (connectingWatchdog != null) {
-      connectingWatchdog.stop();
-      connectingWatchdog = null;
+    connectingWatchdogTicks = -1;
+  }
+
+  // Called from MainView.compute() once per second.
+  function tickConnectingWatchdog() as Void {
+    if (connectingWatchdogTicks < 0) { return; }
+    connectingWatchdogTicks += 1;
+    if (connectingWatchdogTicks >= WATCHDOG_TICKS) {
+      connectingWatchdogTicks = -1;
+      onConnectingTimeout();
     }
   }
 
