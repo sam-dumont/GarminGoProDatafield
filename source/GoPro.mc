@@ -9,6 +9,10 @@ using Toybox.Time;
 using Toybox.Timer;
 
 class GoPro extends Ble.BleDelegate {
+  function initialize() {
+    Ble.BleDelegate.initialize();
+  }
+
   const DEVICE_NAME = "GoPro Cam";
   const CONTROL_AND_QUERY_SERVICE = Ble.stringToUuid(
     "0000fea6-0000-1000-8000-00805f9b34fb"
@@ -428,30 +432,12 @@ class GoPro extends Ble.BleDelegate {
       if (!sendingCommand && commandQueue.size() > 0) {
         var item = commandQueue[0];
         sendingCommand = true;
-        // Actually send the command (original logic)
-        var cmdBytes = []b.addAll(commands.get(item[:command]));
-        if (cmdBytes == null) {
-          log(
-            "[ERROR] startSendingCommands: cmdBytes is null for command: " +
-              item[:command]
-          );
-          sendingCommand = false;
-          commandQueue = commandQueue.slice(1, null);
-          startSendingCommands();
-          return;
-        }
-        var toSend = cmdBytes;
+        // []b.addAll always returns a ByteArray; the old code had
+        // tautological null/instanceof guards here that the type
+        // checker correctly flagged as unreachable.
+        var toSend = []b.addAll(commands.get(item[:command]));
         if (item[:args] != null) {
-          // If args are provided, append or merge as needed
-          toSend = cmdBytes.addAll(item[:args]);
-        }
-        // Only send if toSend is a ByteArray
-        if (!(toSend instanceof ByteArray)) {
-          log("[ERROR] startSendingCommands: toSend is not a ByteArray");
-          sendingCommand = false;
-          commandQueue = commandQueue.slice(1, null);
-          startSendingCommands();
-          return;
+          toSend = toSend.addAll(item[:args]);
         }
         // Send over BLE
         if (device != null) {
@@ -1081,16 +1067,10 @@ class GoPro extends Ble.BleDelegate {
         modeName = modeName + " " + tn;
       }
     }
-    var lFov = null;
-    if (LENS_121_IDS.get(lens_121)) {
-      lFov = LENS_121_IDS.get(lens_121);
-    } else if (LENS_122_123_IDS.get(lens_122)) {
-      lFov = LENS_122_123_IDS.get(lens_122);
-    } else if (LENS_122_123_IDS.get(lens_123)) {
-      lFov = LENS_122_123_IDS.get(lens_123);
-    } else {
-      lFov = FOV_IDS.get(fov);
-    }
+    var lFov = LENS_121_IDS.get(lens_121);
+    if (lFov == null) { lFov = LENS_122_123_IDS.get(lens_122); }
+    if (lFov == null) { lFov = LENS_122_123_IDS.get(lens_123); }
+    if (lFov == null) { lFov = FOV_IDS.get(fov); }
     if (mode == GoPro.MODE_PHOTO) {
       if (flatModeId == 25) {
         settings = Lang.format("$1$ | $2$", [

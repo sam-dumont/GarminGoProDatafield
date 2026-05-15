@@ -69,7 +69,7 @@ case "$MODE" in
             -o bin/GarminGoProWidget.prg \
             -f "$JUNGLES" \
             -y "$DEV_KEY" \
-            -d edge1050_sim -w -l 0 -O 3
+            -d edge1050_sim -w -l 1 -O 3
         ;;
     release)
         switch_store prod
@@ -80,7 +80,7 @@ case "$MODE" in
             -o bin/GarminGoProWidget.iq \
             -f "$JUNGLES" \
             -y "$DEV_KEY" \
-            -d edge1050_sim -w -l 0 -O 3
+            -d edge1050_sim -w -l 1 -O 3
         ;;
     dev)
         switch_store beta
@@ -91,7 +91,7 @@ case "$MODE" in
             -o bin/GarminGoProWidget.prg \
             -f "$JUNGLES" \
             -y "$DEV_KEY" \
-            -d edge1050_sim -w -l 0 -O 3
+            -d edge1050_sim -w -l 1 -O 3
         ;;
     *)
         usage
