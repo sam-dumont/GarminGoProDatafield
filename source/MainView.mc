@@ -22,6 +22,11 @@ class MainView extends WatchUi.DataField {
   var tapCoordinates = [0, 0];
   var keepalive = false;
   var autoStop = false;
+  // Cache for Application.loadResource calls. onUpdate runs at 1 Hz (and
+  // sometimes more during animations) and was previously reloading 6-9
+  // bitmap drawables every single frame — each call hits the resource
+  // system. Cache them lazily on first use.
+  var _bitmapCache as Dictionary = {};
 
   function initialize(gopro as GoPro, screenCoordinates) {
     DataField.initialize();
@@ -40,6 +45,16 @@ class MainView extends WatchUi.DataField {
 
   function onPeriodicUpdate() {
     WatchUi.requestUpdate();
+  }
+
+  // Cached resource loader. See _bitmapCache comment.
+  private function loadBitmap(rezId) {
+    var cached = _bitmapCache[rezId];
+    if (cached == null) {
+      cached = Application.loadResource(rezId);
+      _bitmapCache[rezId] = cached;
+    }
+    return cached;
   }
 
   function onHide() {
@@ -301,19 +316,15 @@ class MainView extends WatchUi.DataField {
         if (gopro.mode == GoPro.MODE_VIDEO) {
           if (gopro.recording) {
             if (backgroundColor == Graphics.COLOR_BLACK) {
-              modeIcon = Application.loadResource(
-                $.Rez.Drawables.white_hilight
-              );
+              modeIcon = loadBitmap($.Rez.Drawables.white_hilight);
             } else {
-              modeIcon = Application.loadResource(
-                $.Rez.Drawables.black_hilight
-              );
+              modeIcon = loadBitmap($.Rez.Drawables.black_hilight);
             }
           } else {
             if (backgroundColor == Graphics.COLOR_BLACK) {
-              modeIcon = Application.loadResource($.Rez.Drawables.white_video);
+              modeIcon = loadBitmap($.Rez.Drawables.white_video);
             } else {
-              modeIcon = Application.loadResource($.Rez.Drawables.black_video);
+              modeIcon = loadBitmap($.Rez.Drawables.black_video);
             }
           }
           layout.remainingText.setText(
@@ -325,15 +336,11 @@ class MainView extends WatchUi.DataField {
           layout.remainingText.setColor(foregroundColor);
         } else if (gopro.mode == GoPro.MODE_TIMELAPSE) {
           if (gopro.recording) {
-            modeIcon = Application.loadResource($.Rez.Drawables.grey_timelapse);
+            modeIcon = loadBitmap($.Rez.Drawables.grey_timelapse);
           } else if (backgroundColor == Graphics.COLOR_BLACK) {
-            modeIcon = Application.loadResource(
-              $.Rez.Drawables.white_timelapse
-            );
+            modeIcon = loadBitmap($.Rez.Drawables.white_timelapse);
           } else {
-            modeIcon = Application.loadResource(
-              $.Rez.Drawables.black_timelapse
-            );
+            modeIcon = loadBitmap($.Rez.Drawables.black_timelapse);
           }
           layout.remainingText.setText(
             Util.format_duration(gopro.remainingTimelapse, true)
@@ -341,11 +348,11 @@ class MainView extends WatchUi.DataField {
           layout.remainingText.setColor(foregroundColor);
         } else if (gopro.mode == GoPro.MODE_PHOTO) {
           if (gopro.recording) {
-            modeIcon = Application.loadResource($.Rez.Drawables.grey_photo);
+            modeIcon = loadBitmap($.Rez.Drawables.grey_photo);
           } else if (backgroundColor == Graphics.COLOR_BLACK) {
-            modeIcon = Application.loadResource($.Rez.Drawables.white_photo);
+            modeIcon = loadBitmap($.Rez.Drawables.white_photo);
           } else {
-            modeIcon = Application.loadResource($.Rez.Drawables.black_photo);
+            modeIcon = loadBitmap($.Rez.Drawables.black_photo);
           }
           layout.remainingText.setText(
             gopro.remainingPhotos > 999 ? ">999" : "" + gopro.remainingPhotos
@@ -355,13 +362,13 @@ class MainView extends WatchUi.DataField {
         if (gopro.recording) {
           statusIcon =
             backgroundColor == Graphics.COLOR_BLACK
-              ? Application.loadResource($.Rez.Drawables.white_stop)
-              : Application.loadResource($.Rez.Drawables.black_stop);
+              ? loadBitmap($.Rez.Drawables.white_stop)
+              : loadBitmap($.Rez.Drawables.black_stop);
         } else {
           statusIcon =
             backgroundColor == Graphics.COLOR_BLACK
-              ? Application.loadResource($.Rez.Drawables.white_record)
-              : Application.loadResource($.Rez.Drawables.black_record);
+              ? loadBitmap($.Rez.Drawables.white_record)
+              : loadBitmap($.Rez.Drawables.black_record);
         }
         self.drawDeviceSpecificUI(
           dc,
@@ -411,9 +418,9 @@ class MainView extends WatchUi.DataField {
 
         var onOffIcon = null;
         if (gopro.asleep) {
-          onOffIcon = Application.loadResource($.Rez.Drawables.on);
+          onOffIcon = loadBitmap($.Rez.Drawables.on);
         } else {
-          onOffIcon = Application.loadResource($.Rez.Drawables.off);
+          onOffIcon = loadBitmap($.Rez.Drawables.off);
         }
 
         if (gopro.hasBeenConnected) {
@@ -547,9 +554,9 @@ class MainView extends WatchUi.DataField {
     }
     var onOffIcon = null;
     if (gopro.asleep) {
-      onOffIcon = Application.loadResource($.Rez.Drawables.on);
+      onOffIcon = loadBitmap($.Rez.Drawables.on);
     } else {
-      onOffIcon = Application.loadResource($.Rez.Drawables.off);
+      onOffIcon = loadBitmap($.Rez.Drawables.off);
     }
     if (gopro.hasBeenConnected) {
       if (onOffIcon != null) {
@@ -652,9 +659,9 @@ class MainView extends WatchUi.DataField {
     }
     var onOffIcon = null;
     if (gopro.asleep) {
-      onOffIcon = Application.loadResource($.Rez.Drawables.on);
+      onOffIcon = loadBitmap($.Rez.Drawables.on);
     } else {
-      onOffIcon = Application.loadResource($.Rez.Drawables.off);
+      onOffIcon = loadBitmap($.Rez.Drawables.off);
     }
     if (gopro.hasBeenConnected) {
       if (onOffIcon != null) {

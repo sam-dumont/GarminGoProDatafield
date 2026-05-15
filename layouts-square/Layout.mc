@@ -175,7 +175,7 @@ class Layout {
         :visible => true,
       });
 
-      modeText = new WatchUi.TextArea({
+      modeText.initialize({
         :text => "Cinematic",
         :color => Graphics.COLOR_WHITE,
         :font => [fonts[3], fonts[2], fonts[1], fonts[0]],
