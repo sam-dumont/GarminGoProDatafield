@@ -33,14 +33,12 @@ class MainView extends WatchUi.DataField {
     layout = new Layout(0);
     self.gopro = gopro;
     self.screenCoordinates = screenCoordinates;
-    keepalive = Util.replaceNull(
-      Application.Properties.getValue("keepalive"),
-      false
-    );
-    autoStop = Util.replaceNull(
-      Application.Properties.getValue("auto_stop"),
-      false
-    );
+    keepalive = (Application.Properties.getValue("keepalive") != null
+      ? Application.Properties.getValue("keepalive")
+      : false) as Lang.Boolean;
+    autoStop = (Application.Properties.getValue("auto_stop") != null
+      ? Application.Properties.getValue("auto_stop")
+      : false) as Lang.Boolean;
   }
 
   // Cached resource loader. See _bitmapCache comment.

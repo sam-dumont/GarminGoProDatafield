@@ -329,10 +329,9 @@ class GoPro extends Ble.BleDelegate {
   var burstFrequency = 0;
   var queryBytesRemaining = 0;
   var commandBytesRemaining = 0;
-  var cameraID = Util.replaceNull(
-    Application.Properties.getValue("gopro_id"),
-    0
-  );
+  var cameraID as Lang.Number = (Application.Properties.getValue("gopro_id") != null
+    ? Application.Properties.getValue("gopro_id")
+    : 0) as Lang.Number;
   var commandNotificationsEnabled = false;
   var connectionStatus = STATUS_SEARCHING;
   var currentPreset = null;
@@ -378,10 +377,9 @@ class GoPro extends Ble.BleDelegate {
   var pairingDevice = null;
   var asleep = false;
   var hasBeenConnected = false;
-  var autoReconnect = Util.replaceNull(
-    Application.Properties.getValue("auto_reconnect"),
-    false
-  );
+  var autoReconnect as Lang.Boolean = (Application.Properties.getValue("auto_reconnect") != null
+    ? Application.Properties.getValue("auto_reconnect")
+    : false) as Lang.Boolean;
   var connectingWatchdog as Timer.Timer? = null;
 
   const SIMULATION_MODE = false; // Set to true to enable simulation mode

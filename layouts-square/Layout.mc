@@ -1,17 +1,18 @@
 import Toybox.WatchUi;
 import Toybox.Graphics;
+import Toybox.Lang;
 
 class Layout {
-  var layoutType;
-  var fonts;
-  var durationText;
-  var remainingText;
-  var batteryText;
-  var modeText;
-  var settingsText;
+  var layoutType as Lang.Number;
+  var fonts as Lang.Array<Graphics.FontType>;
+  var durationText as WatchUi.TextArea;
+  var remainingText as WatchUi.TextArea;
+  var batteryText as WatchUi.TextArea;
+  var modeText as WatchUi.TextArea;
+  var settingsText as WatchUi.TextArea;
 
-  function initialize(layoutType) {
-    layoutType = layoutType;
+  function initialize(layoutType as Lang.Number) {
+    self.layoutType = layoutType;
     fonts = [
       Graphics.FONT_TINY,
       Graphics.FONT_SMALL,
@@ -87,7 +88,7 @@ class Layout {
     });
   }
 
-  function setLayout(dc, newLayoutType) {
+  function setLayout(dc as Graphics.Dc, newLayoutType as Lang.Number) as Void {
     var width = dc.getWidth();
     var height = dc.getHeight();
     layoutType = newLayoutType;
@@ -301,7 +302,7 @@ class Layout {
     }
   }
 
-  function draw(dc) {
+  function draw(dc as Graphics.Dc) as Void {
     durationText.draw(dc);
     remainingText.draw(dc);
     batteryText.draw(dc);

@@ -1,26 +1,31 @@
+using Toybox.Lang;
+
+// Hit-region rectangles for the data field's tap targets. Each button is
+// [[xMin, xMax], [yMin, yMax]] — RecordingDelegate.withinBoundaries checks
+// the tap coordinate against this structure.
 class ScreenCoordinates {
-  var touchEnabled = true;
-  var modeButton = [
+  var touchEnabled as Lang.Boolean = true;
+  var modeButton as Lang.Array<Lang.Array<Lang.Number>> = [
     [0, 0],
     [0, 0],
   ];
-  var recordButton = [
+  var recordButton as Lang.Array<Lang.Array<Lang.Number>> = [
     [0, 0],
     [0, 0],
   ];
-  var connectButton = [
+  var connectButton as Lang.Array<Lang.Array<Lang.Number>> = [
     [0, 0],
     [0, 0],
   ];
-  var nextPresetButton = [
+  var nextPresetButton as Lang.Array<Lang.Array<Lang.Number>> = [
     [0, 0],
     [0, 0],
   ];
-  var prevPresetButton = [
+  var prevPresetButton as Lang.Array<Lang.Array<Lang.Number>> = [
     [0, 0],
     [0, 0],
   ];
-  var onOffButton = [
+  var onOffButton as Lang.Array<Lang.Array<Lang.Number>> = [
     [0, 0],
     [0, 0],
   ];

@@ -1,5 +1,7 @@
+using Toybox.Lang;
+
 class Util {
-  static function format_duration(seconds, shortFormat) {
+  static function format_duration(seconds as Lang.Number, shortFormat as Lang.Boolean) as Lang.String {
     var hh = seconds / 3600;
     var mm = (seconds / 60) % 60;
     var ss = seconds % 60;
@@ -13,9 +15,5 @@ class Util {
     } else {
       return mm + ":" + ss.format("%02d");
     }
-  }
-
-  static function replaceNull(nullableValue, defaultValue) {
-    return (nullableValue != null) ? nullableValue : defaultValue;
   }
 }

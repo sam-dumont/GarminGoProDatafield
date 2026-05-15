@@ -1,20 +1,21 @@
 using Toybox.WatchUi;
-import Toybox.System;
-import Toybox.Lang;
+using Toybox.System;
+using Toybox.Lang;
 
 class RecordingDelegate extends WatchUi.InputDelegate {
-  var screenCoordinates;
-  var gopro;
-  var mainView;
+  var screenCoordinates as ScreenCoordinates;
+  var gopro as GoPro;
+  var mainView as MainView;
 
-  function initialize(gopro, screenCoordinates, mainView) {
+  function initialize(gopro as GoPro, screenCoordinates as ScreenCoordinates, mainView as MainView) {
     InputDelegate.initialize();
     self.screenCoordinates = screenCoordinates;
     self.gopro = gopro;
     self.mainView = mainView;
   }
 
-  function withinBoundaries(coordinates, buttonCoordinates) {
+  // buttonCoordinates is [[xMin, xMax], [yMin, yMax]] — see ScreenCoordinates.
+  function withinBoundaries(coordinates as Lang.Array<Lang.Number>, buttonCoordinates as Lang.Array<Lang.Array<Lang.Number>>) as Lang.Boolean {
     return (
       coordinates[0] > buttonCoordinates[0][0] &&
       coordinates[0] < buttonCoordinates[0][1] &&
@@ -23,11 +24,11 @@ class RecordingDelegate extends WatchUi.InputDelegate {
     );
   }
 
-  function onTap(clickEvent) {
-    if(screenCoordinates.touchEnabled == false) {
+  function onTap(clickEvent as WatchUi.ClickEvent) as Lang.Boolean {
+    if (screenCoordinates.touchEnabled == false) {
       return true; // Ignore tap if touch is disabled
     }
-    var coordinates = clickEvent.getCoordinates();
+    var coordinates = clickEvent.getCoordinates() as Lang.Array<Lang.Number>;
     mainView.setTapCoordinates(coordinates);
     if (
       withinBoundaries(coordinates, screenCoordinates.connectButton) &&
@@ -64,13 +65,13 @@ class RecordingDelegate extends WatchUi.InputDelegate {
       withinBoundaries(coordinates, screenCoordinates.nextPresetButton) &&
       !gopro.recording
     ) {
-      var newPreset = gopro.getPrevNextPresetID(true);
+      var newPreset = gopro.getPrevNextPresetID(true) as Lang.Number;
       System.println("Will send preset " + newPreset);
       if (newPreset != -1) {
-        var args = [0, 0, 0, 0]b.encodeNumber(
-          gopro.getPrevNextPresetID(true),
-          NUMBER_FORMAT_UINT32,
-          { :offset => 0, :endianness => ENDIAN_BIG }
+        var args = ([0, 0, 0, 0]b).encodeNumber(
+          newPreset,
+          Lang.NUMBER_FORMAT_UINT32,
+          { :offset => 0, :endianness => Lang.ENDIAN_BIG }
         );
         System.println(args);
         gopro.sendCommand("PRESET_ID", args);
@@ -79,12 +80,12 @@ class RecordingDelegate extends WatchUi.InputDelegate {
       withinBoundaries(coordinates, screenCoordinates.prevPresetButton) &&
       !gopro.recording
     ) {
-      var newPreset = gopro.getPrevNextPresetID(false);
+      var newPreset = gopro.getPrevNextPresetID(false) as Lang.Number;
       System.println("Will send preset " + newPreset);
       if (newPreset != -1) {
-        var args = [0, 0, 0, 0]b.encodeNumber(newPreset, NUMBER_FORMAT_UINT32, {
+        var args = ([0, 0, 0, 0]b).encodeNumber(newPreset, Lang.NUMBER_FORMAT_UINT32, {
           :offset => 0,
-          :endianness => ENDIAN_BIG,
+          :endianness => Lang.ENDIAN_BIG,
         });
         System.println(args);
         gopro.sendCommand("PRESET_ID", args);

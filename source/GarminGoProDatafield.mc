@@ -4,11 +4,11 @@ import Toybox.WatchUi;
 using Toybox.BluetoothLowEnergy as Ble;
 using Toybox.Sensor;
 
-var mainView;
+var mainView as MainView?;
 
 class GarminGoProDatafieldApp extends Application.AppBase {
-  var gopro;
-  var screenCoordinates;
+  var gopro as GoPro?;
+  var screenCoordinates as ScreenCoordinates?;
 
   function initialize() {
     AppBase.initialize();
@@ -52,13 +52,22 @@ class GarminGoProDatafieldApp extends Application.AppBase {
       Application.Storage.setValue("lastPresetGroupUploaded", false);
     }
 
+    // gopro / screenCoordinates are guaranteed non-null here by onStart()
+    // and getInitialView()'s assignment above, respectively. Cast away
+    // the nullable types for the strict checker.
+    var g = gopro as GoPro;
     screenCoordinates = new ScreenCoordinates();
-    $.mainView = new MainView(gopro, screenCoordinates);
+    var sc = screenCoordinates as ScreenCoordinates;
+    var mv = new MainView(g, sc);
+    $.mainView = mv;
 
-    return [$.mainView, new RecordingDelegate(gopro, screenCoordinates, $.mainView)];
+    return [mv, new RecordingDelegate(g, sc, mv)];
   }
 
-  function onSettingsChanged() {
-    $.mainView.handleSettingsChanged();
+  function onSettingsChanged() as Void {
+    var mv = $.mainView;
+    if (mv != null) {
+      mv.handleSettingsChanged();
+    }
   }
 }
