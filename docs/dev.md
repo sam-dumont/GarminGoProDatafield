@@ -23,23 +23,30 @@ openssl pkcs8 -topk8 -inform PEM -outform DER -in developer_key.pem \
 ## Build modes (`build.sh`)
 
 ```bash
-./build.sh dev     key_path   # simulator: BETA app id, SIMULATION_MODE on, debug log on
-./build.sh build   key_path   # sideload to a real device: BETA app id, real BLE, debug log on
-./build.sh release key_path   # store upload: PROD app id, real BLE, debug log off
+./build.sh dev          key_path   # simulator:        BETA app id, SIMULATION_MODE on,  debug log on
+./build.sh build        key_path   # sideload:         BETA app id, real BLE,           debug log on
+./build.sh release-beta key_path   # BETA store .iq:   BETA app id, real BLE,           debug log on
+./build.sh release      key_path   # PROD store .iq:   PROD app id, real BLE,           debug log off
 ```
 
+`key_path` here is the **pointer file** at the repo root that contains the
+absolute path to your `.der` developer key. `build.sh` dereferences it. You
+can also pass the .der path directly — both work.
+
 `build.sh` mutates source files on disk while it runs — it sed-edits
-`manifest.xml` (BETA ↔ PROD app id) and flips `SIMULATION_MODE` /
-`DEBUG_LOG` in `source/GoPro.mc`. The mutations are part of the build;
-don't commit mid-build. To compile without these side effects, use the
-direct invocation below.
+`manifest.xml` (BETA ↔ PROD app id, AppName ↔ "BETA GPR") and flips
+`SIMULATION_MODE` / `DEBUG_LOG` in `source/GoPro.mc`. After a `release-beta`
+or `dev` build, run `./switch_stores.sh prod` to flip the manifest back
+before committing. Don't commit mid-build.
 
 Output:
-- `dev` / `build` → `bin/GarminGoProWidget.prg` (debug, simulator/sideload)
-- `release` → `bin/GarminGoProWidget.iq` (Connect IQ Store package)
+- `dev` / `build`        → `bin/GarminGoProWidget.prg`        (debug, simulator/sideload)
+- `release-beta`         → `bin/GarminGoProWidget-beta.iq`    (Connect IQ Store BETA package, all devices)
+- `release`              → `bin/GarminGoProWidget.iq`         (Connect IQ Store PROD package, all devices)
 
-All three modes pass `-l 3` (strict type-check) and `-O 3` to the compiler.
-The whole project (hand-written + generated) compiles strict-clean on every
+All modes pass `-l 3` (strict type-check) and `-O 3` to the compiler. The
+two `.iq` modes use `-e` (package-app) so the output is a real multi-device
+zip the store accepts. The whole project compiles strict-clean on every
 manifest product as of 2026-05.
 
 ## Direct compile (bypass build.sh)

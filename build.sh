@@ -3,7 +3,7 @@
 set -e
 
 usage() {
-    echo "Usage: $0 [build|release|dev] <developer_key_path>"
+    echo "Usage: $0 [build|release|release-beta|dev] <developer_key_path>"
     exit 1
 }
 
@@ -13,6 +13,18 @@ fi
 
 MODE=$1
 DEV_KEY=$2
+
+# Resolve the key argument. The repo convention is to pass a pointer file
+# (e.g. `key_path`) whose contents are the absolute path to the .der key.
+# If $DEV_KEY is a small ASCII file, dereference it; otherwise treat it as
+# the key path directly.
+if [ -f "$DEV_KEY" ] && file "$DEV_KEY" | grep -q "ASCII text"; then
+    DEV_KEY=$(tr -d '[:space:]' < "$DEV_KEY")
+fi
+if [ ! -f "$DEV_KEY" ]; then
+    echo "Developer key not found: $DEV_KEY"
+    exit 1
+fi
 
 # Find the latest monkeybrains.jar from the current SDK
 SDK_CFG="$HOME/Library/Application Support/Garmin/ConnectIQ/current-sdk.cfg"
@@ -81,6 +93,17 @@ case "$MODE" in
             -f "$JUNGLES" \
             -y "$DEV_KEY" \
             -d edge1050_sim -w -l 3 -O 3
+        ;;
+    release-beta)
+        switch_store beta
+        set_simulation_mode off
+        set_debug_log on
+        java -Xms1g -Dfile.encoding=UTF-8 -Dapple.awt.UIElement=true \
+            -jar "$JAR" \
+            -o bin/GarminGoProWidget-beta.iq \
+            -f "$JUNGLES" \
+            -y "$DEV_KEY" \
+            -e -w -l 3 -O 3
         ;;
     dev)
         switch_store beta
