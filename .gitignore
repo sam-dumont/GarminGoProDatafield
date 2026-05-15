@@ -6,3 +6,5 @@ bin/
 python/
 key_path
 settings_secrets.xml
+
+developer_key*
