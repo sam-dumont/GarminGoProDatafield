@@ -1,13 +1,7 @@
 project.manifest = manifest.xml
 base.sourcePath=source;generated_protobuf
 
-# EDGE devices
-
-edge840.sourcePath=$(base.sourcePath);layouts-square
-edge840.excludeAnnotations=round
-
-edge850.sourcePath=$(base.sourcePath);layouts-square
-edge850.excludeAnnotations=round
+# Rectangle (edge bike computers, venux1, etrextouch)
 
 edge1040.sourcePath=$(base.sourcePath);layouts-square
 edge1040.excludeAnnotations=round
@@ -15,10 +9,52 @@ edge1040.excludeAnnotations=round
 edge1050.sourcePath=$(base.sourcePath);layouts-square
 edge1050.excludeAnnotations=round
 
+edge840.sourcePath=$(base.sourcePath);layouts-square
+edge840.excludeAnnotations=round
+
+edge850.sourcePath=$(base.sourcePath);layouts-square
+edge850.excludeAnnotations=round
+
 edgeexplore2.sourcePath=$(base.sourcePath);layouts-square
 edgeexplore2.excludeAnnotations=round
 
-# Watches
+etrextouch.sourcePath=$(base.sourcePath);layouts-square
+etrextouch.excludeAnnotations=round
+
+venux1.sourcePath=$(base.sourcePath);layouts-square
+venux1.excludeAnnotations=round
+
+# Round (watches)
+
+approachs50.sourcePath=$(base.sourcePath);layouts-round
+approachs50.excludeAnnotations=square
+
+approachs7042mm.sourcePath=$(base.sourcePath);layouts-round
+approachs7042mm.excludeAnnotations=square
+
+approachs7047mm.sourcePath=$(base.sourcePath);layouts-round
+approachs7047mm.excludeAnnotations=square
+
+d2mach1.sourcePath=$(base.sourcePath);layouts-round
+d2mach1.excludeAnnotations=square
+
+d2mach2.sourcePath=$(base.sourcePath);layouts-round
+d2mach2.excludeAnnotations=square
+
+d2mach2pro.sourcePath=$(base.sourcePath);layouts-round
+d2mach2pro.excludeAnnotations=square
+
+descentg2.sourcePath=$(base.sourcePath);layouts-round
+descentg2.excludeAnnotations=square
+
+descentmk343mm.sourcePath=$(base.sourcePath);layouts-round
+descentmk343mm.excludeAnnotations=square
+
+descentmk351mm.sourcePath=$(base.sourcePath);layouts-round
+descentmk351mm.excludeAnnotations=square
+
+enduro3.sourcePath=$(base.sourcePath);layouts-round
+enduro3.excludeAnnotations=square
 
 epix2.sourcePath=$(base.sourcePath);layouts-round
 epix2.excludeAnnotations=square
@@ -32,11 +68,77 @@ epix2pro47mm.excludeAnnotations=square
 epix2pro51mm.sourcePath=$(base.sourcePath);layouts-round
 epix2pro51mm.excludeAnnotations=square
 
+fenix7.sourcePath=$(base.sourcePath);layouts-round
+fenix7.excludeAnnotations=square
+
+fenix7pro.sourcePath=$(base.sourcePath);layouts-round
+fenix7pro.excludeAnnotations=square
+
+fenix7pronowifi.sourcePath=$(base.sourcePath);layouts-round
+fenix7pronowifi.excludeAnnotations=square
+
+fenix7s.sourcePath=$(base.sourcePath);layouts-round
+fenix7s.excludeAnnotations=square
+
+fenix7spro.sourcePath=$(base.sourcePath);layouts-round
+fenix7spro.excludeAnnotations=square
+
+fenix7x.sourcePath=$(base.sourcePath);layouts-round
+fenix7x.excludeAnnotations=square
+
+fenix7xpro.sourcePath=$(base.sourcePath);layouts-round
+fenix7xpro.excludeAnnotations=square
+
+fenix7xpronowifi.sourcePath=$(base.sourcePath);layouts-round
+fenix7xpronowifi.excludeAnnotations=square
+
+fenix843mm.sourcePath=$(base.sourcePath);layouts-round
+fenix843mm.excludeAnnotations=square
+
+fenix847mm.sourcePath=$(base.sourcePath);layouts-round
+fenix847mm.excludeAnnotations=square
+
+fenix8pro47mm.sourcePath=$(base.sourcePath);layouts-round
+fenix8pro47mm.excludeAnnotations=square
+
+fenix8solar47mm.sourcePath=$(base.sourcePath);layouts-round
+fenix8solar47mm.excludeAnnotations=square
+
+fenix8solar51mm.sourcePath=$(base.sourcePath);layouts-round
+fenix8solar51mm.excludeAnnotations=square
+
+fenixe.sourcePath=$(base.sourcePath);layouts-round
+fenixe.excludeAnnotations=square
+
+fr165.sourcePath=$(base.sourcePath);layouts-round
+fr165.excludeAnnotations=square
+
+fr165m.sourcePath=$(base.sourcePath);layouts-round
+fr165m.excludeAnnotations=square
+
+fr170.sourcePath=$(base.sourcePath);layouts-round
+fr170.excludeAnnotations=square
+
+fr170m.sourcePath=$(base.sourcePath);layouts-round
+fr170m.excludeAnnotations=square
+
+fr265.sourcePath=$(base.sourcePath);layouts-round
+fr265.excludeAnnotations=square
+
+fr265s.sourcePath=$(base.sourcePath);layouts-round
+fr265s.excludeAnnotations=square
+
 fr57042mm.sourcePath=$(base.sourcePath);layouts-round
 fr57042mm.excludeAnnotations=square
 
 fr57047mm.sourcePath=$(base.sourcePath);layouts-round
 fr57047mm.excludeAnnotations=square
+
+fr70.sourcePath=$(base.sourcePath);layouts-round
+fr70.excludeAnnotations=square
+
+fr955.sourcePath=$(base.sourcePath);layouts-round
+fr955.excludeAnnotations=square
 
 fr965.sourcePath=$(base.sourcePath);layouts-round
 fr965.excludeAnnotations=square
@@ -44,14 +146,11 @@ fr965.excludeAnnotations=square
 fr970.sourcePath=$(base.sourcePath);layouts-round
 fr970.excludeAnnotations=square
 
-venu2.sourcePath=$(base.sourcePath);layouts-round
-venu2.excludeAnnotations=square
+marq2.sourcePath=$(base.sourcePath);layouts-round
+marq2.excludeAnnotations=square
 
-venu2plus.sourcePath=$(base.sourcePath);layouts-round
-venu2plus.excludeAnnotations=square
-
-venu2s.sourcePath=$(base.sourcePath);layouts-round
-venu2s.excludeAnnotations=square
+marq2aviator.sourcePath=$(base.sourcePath);layouts-round
+marq2aviator.excludeAnnotations=square
 
 venu3.sourcePath=$(base.sourcePath);layouts-round
 venu3.excludeAnnotations=square
@@ -59,11 +158,14 @@ venu3.excludeAnnotations=square
 venu3s.sourcePath=$(base.sourcePath);layouts-round
 venu3s.excludeAnnotations=square
 
-venusq2m.sourcePath=$(base.sourcePath);layouts-square-lowres
-venusq2m.excludeAnnotations=round
+venu441mm.sourcePath=$(base.sourcePath);layouts-round
+venu441mm.excludeAnnotations=square
 
-venux1.sourcePath=$(base.sourcePath);layouts-square
-venux1.excludeAnnotations=round
+venu445mm.sourcePath=$(base.sourcePath);layouts-round
+venu445mm.excludeAnnotations=square
+
+vivoactive5.sourcePath=$(base.sourcePath);layouts-round
+vivoactive5.excludeAnnotations=square
 
 vivoactive6.sourcePath=$(base.sourcePath);layouts-round
 vivoactive6.excludeAnnotations=square
