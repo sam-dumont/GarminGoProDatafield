@@ -1,6 +1,8 @@
 using Toybox.WatchUi;
 using Toybox.System;
 using Toybox.Lang;
+using Toybox.Application;
+using Toybox.BluetoothLowEnergy as Ble;
 
 class RecordingDelegate extends WatchUi.InputDelegate {
   var screenCoordinates as ScreenCoordinates;
@@ -35,6 +37,10 @@ class RecordingDelegate extends WatchUi.InputDelegate {
       !gopro.shouldConnect
     ) {
       gopro.shouldConnect = true;
+      var paired = Application.Storage.getValue($.PAIRED_SCAN_RESULT) as Ble.ScanResult?;
+      if (paired != null) {
+        Ble.pairDevice(paired);
+      }
       if (gopro.asleep) {
         gopro.wakeup();
       }

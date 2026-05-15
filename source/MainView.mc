@@ -14,9 +14,7 @@ class MainView extends WatchUi.DataField {
   var screenCoordinates as ScreenCoordinates;
   var tick as Lang.Number = 0;
   var tapTick as Lang.Number = 0;
-  var enableDebug as Lang.Boolean = false;
   var gopro as GoPro;
-  var altitude as Lang.Number = 0;
   var shouldConnect as Lang.Boolean = false;
   var drawTap as Lang.Boolean = false;
   var tapCoordinates as Lang.Array<Lang.Number> = [0, 0];
@@ -160,20 +158,12 @@ class MainView extends WatchUi.DataField {
           ])
         );
       } else if (gopro.connectionStatus == GoPro.STATUS_SEARCHING) {
-        if (gopro.cameraID == 0) {
-          var cameraPrompt = "PLEASE SET THE CAMERA ID IN CONNECT IQ SETTINGS.";
-          if (gopro.foundCameraIDs.size() > 0) {
-            cameraPrompt = Lang.format("$1$\nFOUND IDS: $2$", [
-              cameraPrompt,
-              gopro.foundCameraIDs,
-            ]);
-          }
-          // In simulation mode, skip the prompt and force connected UI
-          if (gopro.SIMULATION_MODE) {
-            gopro.connectionStatus = GoPro.STATUS_CONNECTED;
-          } else {
-            layout.durationText.setText(cameraPrompt);
-          }
+        if (gopro.SIMULATION_MODE) {
+          gopro.connectionStatus = GoPro.STATUS_CONNECTED;
+        } else if (Application.Storage.getValue($.PAIRED_SCAN_RESULT) == null) {
+          layout.durationText.setText("PAIR A GOPRO IN SENSORS & ACCESSORIES");
+        } else if (gopro.cameraID == 0) {
+          layout.durationText.setText("SEARCHING FOR GOPRO");
         } else {
           layout.durationText.setText(
             Lang.format("SEARCHING FOR GOPRO $1$", [

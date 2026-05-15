@@ -19,16 +19,14 @@ class GarminGoProDatafieldApp extends Application.AppBase {
   // Sensors & Accessories flow — they do not share state.
   function onStart(state as Dictionary?) as Void {
     AppBase.onStart(state);
-    gopro = new GoPro();
-    // No onScanResultCallback / onConnectionCallback in the activity-time
-    // instance — we don't scan and the connection event is handled
-    // internally by GoPro itself.
-    Ble.setDelegate(gopro);
-    gopro.registerProfiles();
+    var g = new GoPro();
+    gopro = g;
+    Ble.setDelegate(g);
+    g.registerProfiles();
 
-    // If we have a previously-paired GoPro, reconnect directly. No scan.
     var paired = Application.Storage.getValue($.PAIRED_SCAN_RESULT) as Ble.ScanResult?;
     if (paired != null) {
+      g.shouldConnect = true;
       Ble.pairDevice(paired);
     }
   }

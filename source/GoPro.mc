@@ -307,7 +307,6 @@ class GoPro extends Ble.BleDelegate {
     "SHUTTER_ON" => [0x03, 0x01, 0x01, 0x01]b, // set shutter on
     "SHUTTER_OFF" => [0x03, 0x01, 0x01, 0x00]b, // set shutter off
     "HILIGHT" => [0x01, 0x18]b, // hilight video
-    "HARDWARE" => [0x01, 0x3c]b, // get hardware info
     "SLEEP" => [0x01, 0x05]b, // put camera to sleep
     "KEEPALIVE" => [0x03, 0x5b, 0x01, 0x42]b, // set keepalive
     "SETTINGS_UPDATES" => [
@@ -329,9 +328,7 @@ class GoPro extends Ble.BleDelegate {
   var burstFrequency as Lang.Number = 0;
   var queryBytesRemaining as Lang.Number = 0;
   var commandBytesRemaining as Lang.Number = 0;
-  var cameraID as Lang.Number = (Application.Properties.getValue("gopro_id") != null
-    ? Application.Properties.getValue("gopro_id")
-    : 0) as Lang.Number;
+  var cameraID as Lang.Number = 0;
   var commandNotificationsEnabled as Lang.Boolean = false;
   var connectionStatus as Lang.Number = STATUS_SEARCHING;
   var currentPreset as OpenGopro.Preset? = null;
@@ -372,9 +369,6 @@ class GoPro extends Ble.BleDelegate {
   var timeWarpSpeed as Lang.Number = 0;
   var lastPreset as Lang.Boolean = false;
   var firstPreset as Lang.Boolean = false;
-  var foundCameraIDs as Lang.Array<Lang.String> = [];
-  var seenDevices as Lang.Array<Lang.String> = [];
-  var pairingDevice as Ble.ScanResult? = null;
   var asleep as Lang.Boolean = false;
   var hasBeenConnected as Lang.Boolean = false;
   var autoReconnect as Lang.Boolean = (Application.Properties.getValue("auto_reconnect") != null
@@ -634,21 +628,15 @@ class GoPro extends Ble.BleDelegate {
       if (commandId == RESPONSE_TYPE_SLEEP && status == 0) {
         asleep = true;
         connectionStatus = STATUS_SLEEP;
-        // close();
       }
     }
   }
 
   function wakeup() as Void {
     shouldConnect = true;
-    // open();
     if (asleep) {
       asleep = false;
     }
-  }
-
-  function getHardwareInfo() as Void {
-    sendCommand("HARDWARE", null);
   }
 
   function sleep() as Void {
@@ -789,10 +777,9 @@ class GoPro extends Ble.BleDelegate {
     if (device.getName() != null) {
       log("device connected: " + device.getName());
       log(device.getName() + " " + state);
-      // New: If cameraID is 0 or null, extract from device name and save
       var devName = device.getName();
       if (
-        (cameraID == null || cameraID == 0) &&
+        cameraID == 0 &&
         devName != null &&
         devName.length() > 6 &&
         devName.find("GoPro ") == 0
@@ -801,8 +788,6 @@ class GoPro extends Ble.BleDelegate {
         var idNum = idStr.toNumber();
         if (idNum != null && idNum > 0) {
           cameraID = idNum;
-          Application.Properties.setValue("gopro_id", cameraID);
-          log("Saved detected cameraID: " + cameraID);
         }
       }
     }
