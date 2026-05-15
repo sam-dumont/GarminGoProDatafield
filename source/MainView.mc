@@ -131,57 +131,35 @@ class MainView extends WatchUi.DataField {
       }
     }
 
-    if (!shouldConnect) {
-      layout.setLayout(dc, -1);
-      dc.setColor(foregroundColor, foregroundColor);
-      dc.fillRectangle(width * 0.2, height * 0.3, width * 0.6, height * 0.4);
-      dc.setColor(foregroundColor, backgroundColor);
-      layout.durationText.setColor(backgroundColor);
-      layout.durationText.setBackgroundColor(foregroundColor);
-      var connectText = gopro.asleep ? "RECONNECT" : "CONNECT";
-      layout.durationText.setText(
-        Lang.format("$1$ TO GOPRO $2$", [
-          connectText,
-          gopro.cameraID.format("%04d"),
-        ])
-      );
-      screenCoordinates.connectButton = [
-        [width * 0.2, width * 0.8],
-        [height * 0.3, height * 0.7],
-      ];
-    } else if (gopro.connectionStatus != GoPro.STATUS_CONNECTED) {
+    if (gopro.connectionStatus != GoPro.STATUS_CONNECTED) {
+      if (gopro.SIMULATION_MODE) {
+        gopro.connectionStatus = GoPro.STATUS_CONNECTED;
+      }
+    }
+    if (gopro.connectionStatus != GoPro.STATUS_CONNECTED) {
       layout.setLayout(dc, 0);
       layout.durationText.setColor(foregroundColor);
+      var idStr = gopro.cameraID == 0 ? "" : " " + gopro.cameraID.format("%04d");
       if (gopro.asleep) {
-        layout.durationText.setText(
-          Lang.format("GOPRO WITH ID $1$ IS ASLEEP", [
-            gopro.cameraID.format("%04d"),
-          ])
-        );
-      } else if (gopro.connectionStatus == GoPro.STATUS_SEARCHING) {
-        if (gopro.SIMULATION_MODE) {
-          gopro.connectionStatus = GoPro.STATUS_CONNECTED;
-        } else if (Application.Storage.getValue($.PAIRED_SCAN_RESULT) == null) {
-          layout.durationText.setText("PAIR A GOPRO IN SENSORS & ACCESSORIES");
-        } else if (gopro.cameraID == 0) {
-          layout.durationText.setText("SEARCHING FOR GOPRO");
-        } else {
-          layout.durationText.setText(
-            Lang.format("SEARCHING FOR GOPRO $1$", [
-              gopro.cameraID.format("%04d"),
-            ])
-          );
-        }
+        layout.durationText.setText("GOPRO IS ASLEEP\nTAP TO WAKE");
+        screenCoordinates.wakeButton = [
+          [0, width],
+          [0, height],
+        ];
       } else {
-        layout.durationText.setText(
-          Lang.format("CONNECTING TO GOPRO $1$", [
-            gopro.cameraID.format("%04d"),
-          ])
-        );
+        screenCoordinates.wakeButton = [[0, 0], [0, 0]];
+        if (Application.Storage.getValue($.PAIRED_SCAN_RESULT) == null) {
+          layout.durationText.setText("PAIR A GOPRO IN SENSORS & ACCESSORIES");
+        } else if (gopro.connectionStatus == GoPro.STATUS_SEARCHING) {
+          layout.durationText.setText("SEARCHING FOR GOPRO" + idStr);
+        } else {
+          layout.durationText.setText("CONNECTING TO GOPRO" + idStr);
+        }
       }
       layout.remainingText.setColor(foregroundColor);
-      layout.remainingText.setText(""); // Remove log display
+      layout.remainingText.setText("");
     } else {
+      screenCoordinates.wakeButton = [[0, 0], [0, 0]];
       if (height < screenHeight) {
         screenCoordinates.touchEnabled = false;
 

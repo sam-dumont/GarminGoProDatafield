@@ -637,10 +637,28 @@ class GoPro extends Ble.BleDelegate {
     }
   }
 
+  // Wake the camera from either sleep state:
+  //  - "low-power sleep" with the BLE link still up: any BLE write wakes
+  //    the camera, so we send a KEEPALIVE and stay on the existing link.
+  //  - "deep sleep" with BLE dropped: re-pair from the stored ScanResult;
+  //    onConnectedStateChanged will drive the rest of the recovery.
   function wakeup() as Void {
     shouldConnect = true;
-    if (asleep) {
-      asleep = false;
+    if (!asleep) { return; }
+    asleep = false;
+    var linkUp = device != null
+      && commandNotificationsEnabled
+      && queryNotificationsEnabled
+      && settingsNotificationsEnabled;
+    if (linkUp) {
+      connectionStatus = STATUS_CONNECTED;
+      sendCommand("KEEPALIVE", null);
+    } else {
+      connectionStatus = STATUS_SEARCHING;
+      var paired = Application.Storage.getValue($.PAIRED_SCAN_RESULT) as Ble.ScanResult?;
+      if (paired != null) {
+        Ble.pairDevice(paired);
+      }
     }
   }
 

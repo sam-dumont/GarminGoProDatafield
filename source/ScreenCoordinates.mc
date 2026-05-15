@@ -13,7 +13,10 @@ class ScreenCoordinates {
     [0, 0],
     [0, 0],
   ];
-  var connectButton as Lang.Array<Lang.Array<Lang.Numeric>> = [
+  // Tappable region for the "GoPro is asleep" prompt. When asleep, MainView
+  // sets this to the prompt bounds and RecordingDelegate triggers a re-pair
+  // (which wakes the camera over BLE). Zero outside of the asleep state.
+  var wakeButton as Lang.Array<Lang.Array<Lang.Numeric>> = [
     [0, 0],
     [0, 0],
   ];
