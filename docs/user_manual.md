@@ -1,105 +1,132 @@
 # Garmin GoPro Datafield – User Manual
 
-## Introduction
+## What it does
 
-This datafield allows you to control your GoPro camera directly from your Garmin device. You can start/stop recording, change presets, and monitor camera status—all from your wrist or handlebars.
-
----
-
-## Features
-
-- Start/stop video recording
-- Change camera presets (video, photo, timelapse, etc.)
-- View camera status: battery, mode, recording duration, remaining storage
-- Automatic camera detection and pairing
-- Robust BLE connection management
-- Simulation mode for testing (uses real GoPro preset data in base64 format)
-- Debug logging for troubleshooting BLE and preset issues
+A Garmin data field that controls a GoPro camera over Bluetooth from inside
+an activity. Start and stop recording, switch presets, see battery and
+remaining storage — all without taking your hands off the bars.
 
 ---
 
-## Setup & Installation
+## Compatibility
 
-1. **Install the Datafield:**
-   - Download and install the datafield from the Garmin Connect IQ Store.
-2. **Add to Activity:**
-   - On your Garmin device, add the datafield to your preferred activity (e.g., cycling, running).
-3. **Grant Permissions:**
-   - Ensure Bluetooth permissions are enabled for the datafield.
+- **GoPro:** HERO 9 and newer. The reduced/older protocol used by HERO 8 is
+  not supported.
+- **Garmin:** any touch-screen Edge bike computer or Garmin watch on Connect
+  IQ **5.1.0+**. See the manifest for the full list (55+ devices), including
+  the Edge 8xx/10xx/Explore 2 line, fēnix 7/8 family, FR 165/265/955/965/970,
+  epix 2, venu 3/x1, vivoactive 5/6, etc.
 
----
-
-## Pairing & Connecting
-
-- **First Use:**
-  - The datafield will automatically scan for nearby GoPro cameras.
-  - The first GoPro found will be paired and its ID saved for future use.
-- **Subsequent Uses:**
-  - The datafield will connect to the saved camera ID.
-  - If the camera is not found, it will scan for available GoPros.
-- **Manual Pairing:**
-  - If you wish to pair with a different camera, clear the saved camera ID in the datafield settings.
+If your watch doesn't have a touch screen, this data field can't drive it —
+Connect IQ doesn't deliver hardware-button events to data fields.
 
 ---
 
-## Using the Datafield
+## First-time setup
 
-- **Start/Stop Recording:**
-  - Use the Garmin device’s controls to start or stop recording on the GoPro.
-- **Change Presets:**
-  - Cycle through available camera presets (video, photo, timelapse, etc.).
-- **View Status:**
-  - The datafield displays battery level, recording status, mode, and other key info.
-- **Sleep/Wake Camera:**
-  - Put the camera to sleep or wake it up from the datafield.
-- **Debug Logging:**
-  - When a preset is received, the raw BLE data is logged as a base64 string. This can be used for troubleshooting or to simulate responses in development.
+1. **Install** the data field from the Connect IQ Store.
+2. **Add it to an activity profile** on your Garmin device (Edge: Settings →
+   Activity Profile → Data Screens → Add Field; watch: Settings → Activities
+   → … → Data Screens).
+3. **Pair your GoPro through Sensors & Accessories** (this replaces the old
+   manual camera-ID entry):
+   - Wake your GoPro and make sure BLE is enabled in its Wireless settings.
+   - On the Garmin: **Settings → Sensors & Accessories → Add New** (Edge), or
+     **Settings → Sensors → Add New** (watch).
+   - Look under **Connect IQ** for "GoPro Remote". Tap it.
+   - The Garmin scans for GoPros. Yours appears as `GoPro <last4>`. Tap to
+     pair.
+   - The Garmin confirms pairing. From now on, every time you start an
+     activity that uses this data field, it reconnects automatically.
+
+That's it. No camera ID to type, no settings page for pairing.
+
+---
+
+## During an activity
+
+Everything in the data field's view is tappable on touch devices:
+
+- **Mode icon (left)** — cycle Video → Photo → Time-lapse → Video.
+- **Record icon (right)** — start or stop recording (or take a photo in Photo
+  mode).
+- **◀ / ▶ arrows above the mode label** — previous / next preset within the
+  current mode.
+- **Power icon (top center)** — sleep / wake the GoPro.
+- **HiLight (tap the mode icon while recording video)** — drops a HiLight
+  tag in the GoPro clip.
+
+When recording, the duration field gets a red tint so you can confirm the
+GoPro is rolling at a glance.
+
+In the reduced (smaller-than-full-screen) layout, the buttons hide and the
+field shows duration + remaining time + battery + mode/format. Touch
+interaction is automatically disabled in that mode — Garmin only delivers
+taps to full-screen data fields.
+
+---
+
+## Settings
+
+Open the data field's settings page in the Garmin Connect IQ app (or
+ConnectIQ on Garmin Express):
+
+- **Keep the GoPro on at all time?** — sends a periodic KEEPALIVE so the
+  camera doesn't auto-sleep mid-activity. Useful on long rides where you
+  start/stop recording many times.
+- **Start/stop recording when activity starts/stops?** — auto-rolls the
+  GoPro when you press the Garmin's activity Start, and stops on activity
+  pause/stop. Doesn't apply in Photo mode.
+- **Reconnect to GoPro when connection is lost?** — keeps trying to bring
+  the BLE link back up after disconnects (out-of-range, momentary drops).
 
 ---
 
 ## Troubleshooting
 
-- **Camera Not Found:**
-  - Ensure the GoPro is powered on and in pairing mode.
-  - Make sure Bluetooth is enabled on your Garmin device.
-  - Try clearing the saved camera ID and re-pairing.
-- **Connection Drops:**
-  - Move closer to the camera to improve BLE signal.
-  - Restart both the Garmin device and GoPro.
-- **Datafield Not Responding:**
-  - Remove and re-add the datafield to your activity.
-  - Check for updates in the Connect IQ Store.
-- **Preset/Protobuf Errors:**
-  - Check the debug log for a base64-encoded BLE response. Use this for simulation or to report issues.
+### "Pair a GoPro in Sensors & Accessories"
 
----
+The data field shows this when no GoPro is paired yet. Follow the [First-time
+setup](#first-time-setup) instructions above.
 
-## Frequently Asked Questions
+### "Searching for GoPro" stays forever
 
-**Q: Can I use this with multiple GoPros?**
-A: The datafield saves one camera ID at a time. To switch cameras, clear the saved ID in settings and re-pair.
+- Confirm the camera is on, awake, and BLE is enabled in its Wireless settings.
+- Confirm the Garmin's Bluetooth is enabled.
+- Move closer — BLE has limited range, especially through a body.
+- The field has a 10-second watchdog: if the BLE handshake stalls, it
+  automatically retries. Give it a minute before assuming it's stuck.
+- If still stuck: Sensors & Accessories → GoPro Remote → Remove, then pair
+  again.
 
-**Q: Does it work with all GoPro models?**
-A: It supports GoPro models with BLE remote control capability (e.g., HERO8 and newer).
+### Recording doesn't auto-start
 
-**Q: What is Simulation Mode?**
-A: Simulation mode allows you to test the datafield without a physical GoPro. It uses a hardcoded base64 string to simulate real GoPro preset responses. You can also use base64 logs from real devices for more accurate simulation.
+- "Start/stop recording when activity starts/stops" must be on (see
+  [Settings](#settings)).
+- The GoPro must be in Video or Time-lapse mode — Photo mode is skipped on
+  purpose.
 
----
+### Disconnects often
 
-## Feature Explanations
+- Turn on "Reconnect to GoPro when connection is lost" — the field will keep
+  trying to bring the link back up.
+- "Keep the GoPro on at all time" also helps if your start/stop pattern is
+  giving the GoPro time to auto-sleep between actions.
 
-- **Auto-Detection:**
-  - The datafield will automatically pair with the first GoPro it finds if no camera ID is set.
-- **Command Queueing:**
-  - Commands are sent one at a time to ensure reliable communication.
-- **Preset Management:**
-  - Presets are fetched from the camera and can be cycled from the Garmin device.
-- **Debug Logging:**
-  - When a preset is received, the raw BLE data is logged as a base64 string for troubleshooting and simulation.
+### Multiple GoPros?
+
+Garmin only stores one paired sensor of this type per device. To switch
+GoPros: Sensors & Accessories → GoPro Remote → Remove, then pair the other
+one.
+
+### "Simulation mode" mentions
+
+This is a developer build only — the published store app never runs in
+simulation mode.
 
 ---
 
 ## Support
 
-For further help, consult the [Technical Documentation](technical.md) or contact the developer via the Connect IQ Store page.
+Open an issue on the project repo, or comment on the Connect IQ Store page.
+For deeper protocol/debug info, see [Technical documentation](technical.md).

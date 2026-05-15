@@ -1,17 +1,48 @@
 # GarminGoProWidget
 
-This datafield allows Garmin users to control their GoPro camera (versions 9 and above) directly from an activity.
+A Connect IQ data field that controls a GoPro (HERO 9+) over BLE from inside
+a Garmin activity. Start/stop recording, switch presets, see battery and
+remaining storage — all from your Edge or watch.
 
-It is currently only supporting Edge 840, 1040 and 1050 and select watches, because they are the only devices allowing touch interactions and System7 features.
+## Compatibility
 
-I am currently experimenting with Edge Remote to see if it could be used to control the camera. Stay tuned.
+- **GoPro:** HERO 9 and newer.
+- **Garmin:** any touch-screen Edge or watch on Connect IQ **5.1.0+** (the
+  floor for native `Sensor.SensorDelegate` pairing). The manifest currently
+  lists 55+ devices: the Edge 8xx/10xx/Explore 2 line, fēnix 7/8 family,
+  FR 165/170/265/955/965/970, epix 2 family, venu 3/x1, vivoactive 5/6, and
+  more.
 
-### Icons licenses
+Non-touch watches aren't supported — Connect IQ doesn't deliver hardware-
+button events to data fields.
 
-- Camera by vectaicon from <a href="https://thenounproject.com/browse/icons/term/camera/" target="_blank" title="Camera Icons">Noun Project</a> (CC BY 3.0)
-- Video Player by zoro marimo from <a href="https://thenounproject.com/browse/icons/term/video-player/" target="_blank" title="Video Player Icons">Noun Project</a> (CC BY 3.0)
-- Record by Ilham Fitrotul Hayat from <a href="https://thenounproject.com/browse/icons/term/record/" target="_blank" title="Record Icons">Noun Project</a> (CC BY 3.0)
-- time lapse by Culai Lai from <a href="https://thenounproject.com/browse/icons/term/time-lapse/" target="_blank" title="time lapse Icons">Noun Project</a> (CC BY 3.0)
-- stop button by ProSymbols from <a href="https://thenounproject.com/browse/icons/term/stop-button/" target="_blank" title="stop button Icons">Noun Project</a> (CC BY 3.0)
-- bookmark by Soetarman Atmodjo from <a href="https://thenounproject.com/browse/icons/term/bookmark/" target="_blank" title="bookmark Icons">Noun Project</a> (CC BY 3.0)
-- on by WASIM MOLLA from <a href="https://thenounproject.com/browse/icons/term/on/" target="_blank" title="on Icons">Noun Project</a> (CC BY 3.0)
+## Setup
+
+1. Install from the Connect IQ Store.
+2. Add the data field to an activity profile.
+3. Pair your GoPro through **Settings → Sensors & Accessories → Add New →
+   Connect IQ → GoPro Remote**. The pairing persists across activity
+   sessions — no need to re-pair.
+
+Full end-user guide: [docs/user_manual.md](docs/user_manual.md).
+
+## For developers
+
+- [Developer workflow](docs/dev.md) — build, type-check, simulator,
+  protobuf regeneration.
+- [Technical documentation](docs/technical.md) — architecture, BLE flow,
+  state machine, simulator test plan.
+- [Diagrams](docs/diagrams.md) — sequence and state diagrams.
+
+The code is fully type-annotated and compiles strict (`-l 3`) clean on every
+manifest product.
+
+## Icon licenses
+
+- Camera by vectaicon — [Noun Project](https://thenounproject.com/browse/icons/term/camera/) (CC BY 3.0)
+- Video Player by zoro marimo — [Noun Project](https://thenounproject.com/browse/icons/term/video-player/) (CC BY 3.0)
+- Record by Ilham Fitrotul Hayat — [Noun Project](https://thenounproject.com/browse/icons/term/record/) (CC BY 3.0)
+- Time lapse by Culai Lai — [Noun Project](https://thenounproject.com/browse/icons/term/time-lapse/) (CC BY 3.0)
+- Stop button by ProSymbols — [Noun Project](https://thenounproject.com/browse/icons/term/stop-button/) (CC BY 3.0)
+- Bookmark by Soetarman Atmodjo — [Noun Project](https://thenounproject.com/browse/icons/term/bookmark/) (CC BY 3.0)
+- On by WASIM MOLLA — [Noun Project](https://thenounproject.com/browse/icons/term/on/) (CC BY 3.0)
