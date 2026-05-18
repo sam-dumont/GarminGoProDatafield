@@ -13,8 +13,17 @@ class GoPro extends Ble.BleDelegate {
   }
 
   const DEVICE_NAME = "GoPro Cam";
+  // GoPro's normal Open API service. Advertised once the camera is paired
+  // (device name "GoPro 1234").
   const CONTROL_AND_QUERY_SERVICE = Ble.stringToUuid(
     "0000fea6-0000-1000-8000-00805f9b34fb"
+  );
+  // Google Fast Pair service. A GoPro in pairing mode (Connections →
+  // Connect Device) advertises THIS, not FEA6, with the generic name
+  // "GoPro Cam". First-time pairing must match this or the camera is
+  // invisible to the scan.
+  const PAIR_SERVICE = Ble.stringToUuid(
+    "0000fe2c-0000-1000-8000-00805f9b34fb"
   );
   const COMMAND_CHAR = Ble.stringToUuid("B5F90072-aa8d-11e3-9046-0002a5d5c51b");
   const COMMAND_NOTIFICATION = Ble.stringToUuid(
@@ -393,7 +402,7 @@ class GoPro extends Ble.BleDelegate {
   var sendingCommand as Lang.Boolean = false;
 
   // Set this to true for build/dev, false for release
-  const DEBUG_LOG = false;
+  const DEBUG_LOG = true;
 
   // Unified logging method
   function log(str as Lang.Object) as Void {
@@ -708,14 +717,16 @@ class GoPro extends Ble.BleDelegate {
       var uuids = result.getServiceUuids();
       var matches = false;
       for (var u = uuids.next(); u != null; u = uuids.next()) {
-        if (u.equals(CONTROL_AND_QUERY_SERVICE)) {
+        // Match both: FEA6 (paired/normal mode) and FE2C (pairing mode).
+        // A camera being paired for the first time only advertises FE2C.
+        if (u.equals(CONTROL_AND_QUERY_SERVICE) || u.equals(PAIR_SERVICE)) {
           matches = true;
           break;
         }
       }
       var cb = onScanResultCallback;
       if (matches && cb != null) {
-        log("scan match: " + result.getDeviceName());
+        log("scan match: " + result.getDeviceName() + " uuids matched");
         cb.invoke(result);
       }
     }

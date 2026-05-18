@@ -21,6 +21,10 @@ class GoProSensorDelegate extends Sensor.SensorDelegate {
   private var _pairingBle as GoPro;
   private var _sensor as Sensor.SensorInfo?;
   private var _scanResult as Ble.ScanResult?;
+  // BLE advertisements are noisy: onScanResults fires procScanResult for
+  // every matching packet. Present exactly one sensor and ignore the rest
+  // until the scan is restarted.
+  private var _notified as Boolean = false;
 
   public function initialize() {
     SensorDelegate.initialize();
@@ -43,6 +47,7 @@ class GoProSensorDelegate extends Sensor.SensorDelegate {
       // Already paired — don't show the scanning UI.
       return false;
     }
+    _notified = false;
     Ble.setScanState(Ble.SCAN_STATE_SCANNING);
     return true;
   }
@@ -50,8 +55,11 @@ class GoProSensorDelegate extends Sensor.SensorDelegate {
   // Called from _pairingBle.onScanResults for each scan hit matching the
   // GoPro service UUID (filtering happens in GoPro.onScanResults).
   public function procScanResult(scanResult as Ble.ScanResult) as Void {
+    if (_notified) { return; }
+    _notified = true;
+
     var name = scanResult.getDeviceName();
-    if (name == null) { name = "Unknown GoPro"; }
+    if (name == null) { name = "GoPro Cam"; }
 
     var sensor = new Sensor.SensorInfo();
     sensor.name = name;
