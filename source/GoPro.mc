@@ -402,7 +402,7 @@ class GoPro extends Ble.BleDelegate {
   var sendingCommand as Lang.Boolean = false;
 
   // Set this to true for build/dev, false for release
-  const DEBUG_LOG = true;
+  const DEBUG_LOG = false;
 
   // Unified logging method
   function log(str as Lang.Object) as Void {
