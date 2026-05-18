@@ -833,6 +833,19 @@ class GoPro extends Ble.BleDelegate {
       // notification descriptors. The watchdog will fire if that chain stalls.
       connectionStatus = STATUS_CONNECTING;
       startConnectingWatchdog();
+      // The GoPro REQUIRES the central to initiate BLE bonding right after
+      // connecting. Without this the camera accepts the connection, briefly
+      // shows the device in its pairing list, then drops the link. On a
+      // first pair this triggers onEncryptionStatus(SUCCESS) once bonding
+      // completes; on reconnect the device is already bonded and
+      // requestBond throws — encryption is already restored from the
+      // persisted bond, so go straight to enabling notifications.
+      try {
+        device.requestBond();
+      } catch (ex) {
+        log("requestBond threw (already bonded?): " + ex.getErrorMessage());
+        enableNotifications(COMMAND_NOTIFICATION);
+      }
     } else {
       // BLE link dropped. Reset to SEARCHING so the UI shows the right state
       // and the notification-enable flags don't leak into the next session.
