@@ -392,11 +392,10 @@ class GoPro extends Ble.BleDelegate {
 
   const SIMULATION_MODE = false; // Set to true to enable simulation mode
 
-  // Optional callbacks set by the pairing-time GoProSensorDelegate instance.
-  // Null in the activity-time instance (which does not scan and handles
-  // connection state internally).
+  // Set by the discovery-only GoProSensorDelegate so scan hits are
+  // surfaced to the system pairing UX. Null in the activity-time
+  // instance, which connects directly and handles state internally.
   var onScanResultCallback as Lang.Method?;
-  var onConnectionCallback as Lang.Method?;
 
   var commandQueue as Lang.Array<Lang.Dictionary<Lang.Symbol, Lang.Object>> = [];
   var sendingCommand as Lang.Boolean = false;
@@ -833,18 +832,21 @@ class GoPro extends Ble.BleDelegate {
       // notification descriptors. The watchdog will fire if that chain stalls.
       connectionStatus = STATUS_CONNECTING;
       startConnectingWatchdog();
-      // The GoPro REQUIRES the central to initiate BLE bonding right after
-      // connecting. Without this the camera accepts the connection, briefly
-      // shows the device in its pairing list, then drops the link. On a
-      // first pair this triggers onEncryptionStatus(SUCCESS) once bonding
-      // completes; on reconnect the device is already bonded and
-      // requestBond throws — encryption is already restored from the
-      // persisted bond, so go straight to enabling notifications.
-      try {
-        device.requestBond();
-      } catch (ex) {
-        log("requestBond threw (already bonded?): " + ex.getErrorMessage());
+      // The GoPro REQUIRES the central to drive BLE bonding. Without it the
+      // camera accepts the connection, shows the device in its pairing list
+      // for a moment, then drops the link ("boom disappear").
+      //  - Already bonded (reconnect): encryption is restored from the
+      //    persisted bond, so go straight to enabling notifications.
+      //  - Not bonded (first connect): requestBond(); the bond completes
+      //    via onEncryptionStatus(SUCCESS) which then enables notifications.
+      if (device.isBonded()) {
         enableNotifications(COMMAND_NOTIFICATION);
+      } else {
+        try {
+          device.requestBond();
+        } catch (ex) {
+          log("requestBond failed: " + ex.getErrorMessage());
+        }
       }
     } else {
       // BLE link dropped. Reset to SEARCHING so the UI shows the right state
@@ -860,10 +862,6 @@ class GoPro extends Ble.BleDelegate {
         log("Auto-reconnect enabled, attempting to reconnect...");
         shouldConnect = true;
       }
-    }
-
-    if (state == Ble.CONNECTION_STATE_CONNECTED && onConnectionCallback != null) {
-      onConnectionCallback.invoke(device);
     }
   }
 

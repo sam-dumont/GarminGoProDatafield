@@ -1,6 +1,20 @@
 // GoProSensorDelegate.mc
-// Bridges the GoPro into the system Sensors & Accessories pairing UX.
-// Pattern: NordicThingy52 SDK sample + SmartBikeLights for the storage bridge.
+// DISCOVERY-ONLY shim for the system Sensors & Accessories pairing UX.
+//
+// The GoPro has a NON-STANDARD BLE bond: the central must explicitly drive
+// requestBond() and re-enable the COMMAND/QUERY/SETTINGS notification
+// descriptors, in order, on every connection. Garmin's native pairing
+// model (see the NordicThingy52 SDK sample) assumes the SYSTEM performs
+// the bond — true for standard sensors, false for the GoPro. Trying to
+// complete the GoPro handshake inside the native pairing flow makes the
+// camera connect, wait for a bond that never comes the way it expects,
+// then drop the link.
+//
+// So this delegate does discovery ONLY: scan, present the sensor, and on
+// pair persist the ScanResult + report complete. The real connection
+// (pairDevice + requestBond + notification chain) is driven entirely by
+// the activity-time GoPro BleDelegate in App.onStart — the exact manual
+// sequence that worked pre-migration.
 //
 // IMPORTANT: this delegate runs in a different app instance than the main
 // datafield's GoPro BleDelegate. The only state bridge is Application.Storage.
@@ -18,9 +32,9 @@ const PAIRED_SCAN_RESULT = "paired_scan_result";
 class GoProSensorDelegate extends Sensor.SensorDelegate {
   // Our own BLE delegate, used only during the pairing-flow scan. It is
   // separate from the GoPro BleDelegate the main App.onStart constructs.
+  // BLE delegate used ONLY for the discovery scan. It never drives a
+  // connection — onPair hands off to the activity-time delegate.
   private var _pairingBle as GoPro;
-  private var _sensor as Sensor.SensorInfo?;
-  private var _scanResult as Ble.ScanResult?;
   // BLE advertisements are noisy: onScanResults fires procScanResult for
   // every matching packet. Present exactly one sensor and ignore the rest
   // until the scan is restarted.
@@ -30,7 +44,6 @@ class GoProSensorDelegate extends Sensor.SensorDelegate {
     SensorDelegate.initialize();
     _pairingBle = new GoPro();
     _pairingBle.onScanResultCallback = method(:procScanResult);
-    _pairingBle.onConnectionCallback = method(:procConnection);
     _pairingBle.registerProfiles();
     Ble.setDelegate(_pairingBle);
   }
@@ -75,25 +88,22 @@ class GoProSensorDelegate extends Sensor.SensorDelegate {
   }
 
   // System asks us to pair the user-selected sensor.
+  //
+  // Discovery-only: we do NOT call Ble.pairDevice here. Attempting the
+  // GoPro bond inside the native pairing flow is exactly what fails
+  // ("boom disappear"). Instead persist the ScanResult and report the
+  // pair complete immediately. The activity-time GoPro delegate does the
+  // real connect + requestBond + notification chain on the next activity.
   public function onPair(sensor as Sensor.SensorInfo) as Boolean {
     var data = sensor.data;
     if (data == null) { return false; }
     var scanResult = data[:bleScanResult] as Ble.ScanResult?;
     if (scanResult == null) { return false; }
-    if (Ble.pairDevice(scanResult) == null) { return false; }
-    _sensor = sensor;
-    _scanResult = scanResult;
-    return true;
-  }
 
-  // Bridged from _pairingBle.onConnectedStateChanged on CONNECTED.
-  public function procConnection(device as Ble.Device) as Void {
-    if (_sensor != null && device != null) {
-      Sensor.notifyPairComplete(_sensor);
-      Application.Storage.setValue(PAIRED_SCAN_RESULT, _scanResult);
-      _sensor = null;
-      _scanResult = null; // single-shot — release once persisted
-    }
+    Application.Storage.setValue(PAIRED_SCAN_RESULT, scanResult);
+    Sensor.notifyPairComplete(sensor);
+    Ble.setScanState(Ble.SCAN_STATE_OFF);
+    return true;
   }
 
   // System asks us to unpair. Compare via isSameDevice on the stored ScanResult.
@@ -108,8 +118,6 @@ class GoProSensorDelegate extends Sensor.SensorDelegate {
 
     Sensor.notifyUnpairComplete(sensor);
     Application.Storage.deleteValue(PAIRED_SCAN_RESULT);
-    _sensor = null;
-    _scanResult = null;
     return true;
   }
 }
